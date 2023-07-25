@@ -1,5 +1,20 @@
+from abc import abstractmethod
+
+import pandas as pd
+
 
 class Strategy:
+
+    def __repr__(self):
+        return '<Strategy ' + str(self) + '>'
+
+    def __str__(self):
+        attrs = vars(self)  # Obtiene el diccionario de atributos de la instancia
+        attributes_str = ",".join(f"{key}={value}" for key, value in attrs.items())
+        return f"{self.__class__.__name__}({attributes_str})"
+
+    def __init__(self):
+        self.data = pd.DataFrame
 
     @abstractmethod
     def init(self):
@@ -7,6 +22,7 @@ class Strategy:
         Initialize the strategy.
         Override this method.
         """
+
     @abstractmethod
     def next(self):
         """
@@ -21,6 +37,7 @@ class Strategy:
 
     def order_stop_loss(self):
         pass
+
     @property
     def equity(self) -> float:
         """
@@ -36,5 +53,3 @@ class Strategy:
         :return:
         """
         pass
-
-
