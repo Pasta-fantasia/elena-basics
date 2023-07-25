@@ -6,6 +6,8 @@ ENV CLI=${MODULE_NAME}
 ENV USER_HOME=/home/${USER}
 ENV APP_INSTALL_DIR=/opt/${USER}
 
+ENV ELENA_HOME=/home/${USER}/data
+
 ## Ensure build-deps
 #RUN apt-get update --yes && \
 #    apt-get install --yes --no-install-recommends \
@@ -24,13 +26,18 @@ RUN set -ex \
     && mkdir --parents ${APP_INSTALL_DIR} \
     && chown ${USER}:${USER} ${APP_INSTALL_DIR}
 
-
+# ----------------------------------------------------------
 # only while we use pip install git:ssh
-#WORKDIR "${USER_HOME}/.ssh"
-#COPY --chown=${USER}:${USER} id* "${USER_HOME}/.ssh/"
-#COPY --chown=${USER}:${USER} known_hosts "${USER_HOME}/.ssh/"
-#RUN chmod 600 ${USER_HOME}/.ssh/*
+RUN apt-get update --yes && \
+    apt-get install --yes --no-install-recommends \
+    git openssh-client && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+WORKDIR "${USER_HOME}/.ssh"
+COPY --chown=${USER}:${USER} id* "${USER_HOME}/.ssh/"
+COPY --chown=${USER}:${USER} known_hosts "${USER_HOME}/.ssh/"
+RUN chmod 600 ${USER_HOME}/.ssh/*
 # only while we use pip install git:ssh
+# ----------------------------------------------------------
 
 # install as root
 COPY setup* ${APP_INSTALL_DIR}/
@@ -40,6 +47,7 @@ COPY ${MODULE_NAME} ${APP_INSTALL_DIR}/${MODULE_NAME}
 RUN pip install ${APP_INSTALL_DIR}
 
 USER ${USER}
+RUN pip install --user git+ssh://git@github.com/Ciskam-Lab/elena.git@reborn#egg=elena
 WORKDIR ${USER_HOME}
 
 CMD ${MODULE_NAME}
