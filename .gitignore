@@ -163,3 +163,4 @@ cython_debug/
 /id_rsa
 /id_rsa.pub
 /known_hosts
+/local_data/elena_config.yaml

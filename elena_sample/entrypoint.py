@@ -5,6 +5,7 @@ from elena.adapters.config.local_config_reader import LocalConfigReader
 from elena_sample.strategy_trailing_stop_with_bb.trailing_stop_bb import TrailingStopLossBBbuyAfterSleep
 
 def main():
+    # debug using ELENA_HOME pointing to ./local_data
     print('Hello World!')
     x = TrailingStopLossBBbuyAfterSleep()
     print(x)

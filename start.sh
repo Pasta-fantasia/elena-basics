@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-local_dir=` pwd ` + '/local_data'
+local_dir=` pwd `'/local_data'
 APP_HOME='/opt/elena_sample'
 
 echo Using:
