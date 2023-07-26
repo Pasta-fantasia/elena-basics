@@ -4,9 +4,15 @@ ENV MODULE_NAME=elena_sample
 ENV USER=${MODULE_NAME}
 ENV CLI=${MODULE_NAME}
 ENV USER_HOME=/home/${USER}
+# when using pip install --user ~/.local/bin must be added to PATH
+ENV PATH="${PATH}:${USER_HOME}/.local/bin"
+
+# source destination to run pip install
 ENV APP_INSTALL_DIR=/opt/${USER}
 
 ENV ELENA_HOME=/home/${USER}/data
+
+
 
 ## Ensure build-deps
 #RUN apt-get update --yes && \
@@ -39,15 +45,12 @@ RUN chmod 600 ${USER_HOME}/.ssh/*
 # only while we use pip install git:ssh
 # ----------------------------------------------------------
 
-# install as root
+# install as user
+USER ${USER}
 COPY setup* ${APP_INSTALL_DIR}/
 COPY requirements.txt ${APP_INSTALL_DIR}
-COPY ${MODULE_NAME} ${APP_INSTALL_DIR}/${MODULE_NAME}
-
-RUN pip install ${APP_INSTALL_DIR}
-
-USER ${USER}
-RUN pip install --user git+ssh://git@github.com/Ciskam-Lab/elena.git@reborn#egg=elena
+COPY ${MODULE_NAME} ${APP_INSTALL_DIR}/${MODULE_NAME}/
+RUN pip install --user --no-cache-dir ${APP_INSTALL_DIR}
 WORKDIR ${USER_HOME}
 
 CMD ${MODULE_NAME}
