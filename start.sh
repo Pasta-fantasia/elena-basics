@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 local_dir=` pwd `'/local_data'
-APP_HOME='/opt/elena_sample'
+APP_HOME='/home/elena_sample'
 
 echo Using:
 echo    ${local_dir} as working directory
@@ -13,4 +13,4 @@ docker run  --name elena_sample \
         fransimo/elena_sample
 
 # for test
-#docker run --name elena_sample --rm -ti fransimo/elena_sample /bin/bash
+#docker run --name elena_sample --rm -ti -v /Users/fran/PycharmProjects/elena-sample/local_data:/home/elena_sample/data fransimo/elena_sample /bin/bash
