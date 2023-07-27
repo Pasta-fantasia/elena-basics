@@ -1,5 +1,4 @@
 import os
-
 from setuptools import setup
 
 required_modules = []
@@ -8,6 +7,7 @@ linked_dependencies = []
 try:
     # Use requirements.txt to build dependencies
     # We use this to make developers live easy :)
+    # Note: message are only visible with pip install -v ...
     with open(os.path.join(os.path.dirname(__file__), 'requirements.txt'), 'r') as file:
         requirements = file.readlines()
 
@@ -25,8 +25,10 @@ try:
             pass
         else:
             required_modules.append(p)
-except:
-    print(f"Warning, some goes wrong when trying to process 'requirements.txt' @ {os.path.dirname(__file__)}")
+except Exception as ex:
+    # if people is using set.cfg for dependency not finding requirements.txt is an option.
+    print(f"Warning, some goes wrong when trying to process 'requirements.txt'")
+    print(ex)
 
 setup(
     install_requires=required_modules,
