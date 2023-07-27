@@ -163,6 +163,7 @@ cython_debug/
 /id_rsa
 /id_rsa.pub
 /known_hosts
+# exclude local_data
 /local_data/elena_config.yaml
 /local_data/bots/
 /local_data/logs/
