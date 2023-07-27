@@ -1,48 +1,46 @@
 Strategies:
-  -
-    id: SAMPLE-1
+  - id: SAMPLE-1
     name: Sample strategy 1
     enabled: true
     bots:
-      -
-        id: SAM-1.1
+      - id: SAM-1.1
         name: Sample strategy 1 bot 1
         enabled: true
         pair: ETH/USDT
         exchange: kucoin
         tags:
-           - ranging
-           - bear
+          - ranging
+          - bear
         config:
-           key1: value1
-           key2: value2
+          key1: value1
+          key2: value2
       - id: SAM-1.2
         name: Sample strategy 1 bot 2
         enabled: false
         pair: BTC/USDC
         exchange: bitget
         tags:
-           - bull
+          - bull
         config:
-           key1: value1
-           key2: value2
+          key1: value1
+          key2: value2
 Exchanges:
-   - id: bitget
-     enabled: true
-     sandbox_mode: true
-     api_key: ***REMOVED***
-     password: ***REMOVED***
-     secret: ***REMOVED***
-   - id: kucoin
-     enabled: false
-     sandbox_mode: false
-     api_key: ***REMOVED***
-     password: ***REMOVED***
-     secret: ***REMOVED***
+  - id: bitget
+    enabled: true
+    sandbox_mode: true
+    api_key: ***REMOVED***
+    password: ***REMOVED***
+    secret: ***REMOVED***
+  - id: kucoin
+    enabled: true
+    sandbox_mode: false
+    api_key: ***REMOVED***
+    password: ***REMOVED***
+    secret: ***REMOVED***
 Tags:
-   - id: bear
-     enabled: true
-   - id: bull
-     enabled: false
-   - id: ranging
-     enabled: true
+  - id: bear
+    enabled: true
+  - id: bull
+    enabled: false
+  - id: ranging
+    enabled: true
