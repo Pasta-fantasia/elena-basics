@@ -4,6 +4,8 @@ from elena import __version__ as version
 
 from elena_sample.strategy_trailing_stop_with_bb.trailing_stop_bb import TrailingStopLossBBbuyAfterSleep
 
+### for testing only!!!!
+
 def main():
     # debug using ELENA_HOME pointing to ./local_data
     print('Hello World!')
