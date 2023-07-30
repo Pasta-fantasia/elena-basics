@@ -1,4 +1,4 @@
-elena @ git+ssh://git@github.com/Ciskam-Lab/elena.git@reborn#egg=elena
+elena @ git+ssh://git@github.com/Ciskam-Lab/elena.git@main#egg=elena
 pandas-ta
 #backtesting
 #multiprocess

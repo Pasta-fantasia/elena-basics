@@ -1,6 +1,6 @@
 from elena.config import dependency_injection
-from elena.constants import VERSION
 from elena.adapters.config.local_config_reader import LocalConfigReader
+from elena import __version__ as version
 
 from elena_sample.strategy_trailing_stop_with_bb.trailing_stop_bb import TrailingStopLossBBbuyAfterSleep
 
@@ -14,7 +14,7 @@ def main():
     container = dependency_injection.get_container(config)
     container.wire(modules=[__name__])
     elena = container.elena()
-    print(f"Starting Elena v{VERSION} from CLI")
+    print(f"Starting Elena v{version} from CLI")
     elena.run()
 
 

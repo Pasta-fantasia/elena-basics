@@ -1,6 +1,7 @@
 Strategies:
   - id: SAMPLE-1
     name: Sample strategy 1
+    strategy_class: elena_sample.strategy_trailing_stop_with_bb.trailing_stop_bb.TrailingStopLossBBbuyAfterSleep
     enabled: true
     bots:
       - id: SAM-1.1

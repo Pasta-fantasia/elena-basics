@@ -53,4 +53,5 @@ COPY ${MODULE_NAME} ${APP_INSTALL_DIR}/${MODULE_NAME}/
 RUN pip install --user --no-cache-dir ${APP_INSTALL_DIR}
 WORKDIR ${USER_HOME}
 
-CMD ${MODULE_NAME}
+#CMD ${MODULE_NAME}
+CMD elena
