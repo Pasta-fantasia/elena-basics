@@ -4,7 +4,7 @@ ENV MODULE_NAME=elena_sample
 ENV USER=${MODULE_NAME}
 ENV CLI=${MODULE_NAME}
 ENV USER_HOME=/home/${USER}
-# when using pip install --user ~/.local/bin must be added to PATH
+# when using pip install --user => ~/.local/bin must be added to PATH
 ENV PATH="${PATH}:${USER_HOME}/.local/bin"
 
 # source destination to run pip install
@@ -13,15 +13,12 @@ ENV APP_INSTALL_DIR=/opt/${USER}
 ENV ELENA_HOME=/home/${USER}/data
 
 
-
 ## Ensure build-deps
 #RUN apt-get update --yes && \
 #    apt-get install --yes --no-install-recommends \
 #    fonts-dejavu \
 #    gfortran \
-#    build-essential libssl-dev libmariadb3 libmariadb-dev \
-#    gcc \
-#    git openssh-client && \
+#    build-essential libssl-dev gcc && \
 #    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
@@ -32,18 +29,19 @@ RUN set -ex \
     && mkdir --parents ${APP_INSTALL_DIR} \
     && chown ${USER}:${USER} ${APP_INSTALL_DIR}
 
-# ----------------------------------------------------------
-# only while we use pip install git:ssh
-RUN apt-get update --yes && \
-    apt-get install --yes --no-install-recommends \
-    git openssh-client && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-WORKDIR "${USER_HOME}/.ssh"
-COPY --chown=${USER}:${USER} id* "${USER_HOME}/.ssh/"
-COPY --chown=${USER}:${USER} known_hosts "${USER_HOME}/.ssh/"
-RUN chmod 600 ${USER_HOME}/.ssh/*
-# only while we use pip install git:ssh
-# ----------------------------------------------------------
+## ----------------------------------------------------------
+## only while we use pip install git:ssh
+#RUN apt-get update --yes && \
+#    apt-get install --yes --no-install-recommends \
+#    git openssh-client && \
+#    apt-get clean && rm -rf /var/lib/apt/lists/*
+#WORKDIR "${USER_HOME}/.ssh"
+#COPY --chown=${USER}:${USER} id* "${USER_HOME}/.ssh/"
+#COPY --chown=${USER}:${USER} known_hosts "${USER_HOME}/.ssh/"
+#RUN chmod 600 ${USER_HOME}/.ssh/*
+## only while we use pip install git:ssh
+## ----------------------------------------------------------
+
 
 # install as user
 USER ${USER}
