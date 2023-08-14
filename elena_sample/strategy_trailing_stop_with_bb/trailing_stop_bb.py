@@ -68,6 +68,7 @@ class TrailingStopLossBBbuyAfterSleep(Bot):
                 create a new order with "new SL" for "new order size"
                 notify("found more balance and handling it")
             
+            notify_on_order_status_change can be a property ser on Strategy.init... not a bot parameter
             
         '''
         return status
