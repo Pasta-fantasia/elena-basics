@@ -4,42 +4,50 @@ from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus
 from elena.domain.ports.bot import Bot
 from elena.domain.ports.strategy_manager import StrategyManager
+from elena.domain.model.exchange import Exchange
+from elena.domain.model.time_frame import TimeFrame
+from elena.domain.model.trading_pair import TradingPair
 
-
-class TrailingStopLossBBbuyAfterSleep(Bot):
-    # Trailing Stop Loss and Buy always with a sleep
+class TrailingStopLossBB(Bot):
+    # Trailing Stop Loss using BB
 
     _manager: StrategyManager
     _logger: Logger
     _name: str
+    _bot_config: BotConfig
+    _exchange: Exchange
 
     bb_length: int
     bb_mult: float
+    initial_sl_factor: float
+    asset_to_manage: str
 
-    sleep_by: int
-
-    reinvest: float
     stop_loose_changes: int
-    cash: float
 
-    def init(self, manager: StrategyManager, logger: Logger):
+    def init(self, manager: StrategyManager, logger: Logger, bot_config: BotConfig):
         self._manager = manager
         self._logger = logger
         self._name = self.__class__.__name__
+        self._bot_config = bot_config
+        self._exchange = self._manager.get_exchange(self._bot_config.exchange_id)
 
-        # get them from StrategyManager
-        self.bb_length = 5
-        self.bb_mult = 2
+        try:
+            self.bb_length = bot_config.config['bb_length']
+            self.bb_mult = bot_config.config['bb_mult']
+            self.initial_sl_factor = bot_config.config['initial_sl_factor']
+            self.asset_to_manage = bot_config.config['asset_to_manage']
+            # TODO [Pere] Is there some magic trick to do it? We can keep BotConfig as is, but...
+        except Exception as err:
+            logger.error('Error initializing Bot config')
+            logger.error(f"Unexpected {err=}, {type(err)=}")
+            # TODO [Pere] Should we raise it? _get_bot_instance
 
-        self.sleep_by = 0
-
-        self.reinvest = 0
-        self.stop_loose_changes = 0
-        self.cash = 1000
-        logger.info("Hello!")
-
-    def next(self, status: BotStatus, bot_config: BotConfig) -> BotStatus:
+    def next(self, status: BotStatus) -> BotStatus:
         self._logger.info('%s strategy: processing next cycle ...', self._name)
+
+        # candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
+        balance = self._manager.get_balance(self._exchange)
+        self._logger.info(balance)
 
         '''
             Check model at https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#header-classes
