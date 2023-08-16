@@ -7,6 +7,8 @@ from elena.domain.ports.strategy_manager import StrategyManager
 from elena.domain.model.exchange import Exchange
 from elena.domain.model.time_frame import TimeFrame
 from elena.domain.model.trading_pair import TradingPair
+import pandas_ta as ta
+
 
 class TrailingStopLossBB(Bot):
     # Trailing Stop Loss using BB
@@ -45,9 +47,15 @@ class TrailingStopLossBB(Bot):
     def next(self, status: BotStatus) -> BotStatus:
         self._logger.info('%s strategy: processing next cycle ...', self._name)
 
-        # candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
         balance = self._manager.get_balance(self._exchange)
         self._logger.info(balance)
+        candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
+        bbands = ta.bbands(close=candles.Close, length=self.bb_length, std=self.bb_mult)
+
+        lower_band = bbands[bbands.columns[0]]
+        upper_band = bbands[bbands.columns[2]]
+
+        new_stop = float(lower_band[-1:].iloc[0])
 
         '''
             Check model at https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#header-classes
