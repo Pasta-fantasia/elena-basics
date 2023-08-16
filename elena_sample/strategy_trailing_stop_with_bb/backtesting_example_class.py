@@ -1,9 +1,9 @@
-from elena_sample.model.strategy import Strategy
+class Moving_Stop_Loss_BB_buy_After_Sleep(Strategy):
+    # Moving Stop Loss and Buy always with a sleep
 
-class TrailingStopLossBBbuyAfterSleep(Strategy):
-    # Trailing Stop Loss and Buy always with a sleep
-    bb_lenght = 5
-    bb_mult = 5
+    bb_lenght = 4320
+    bb_mult = 1.5
+    intial_sl_factor = 0.9
 
     sleep_by = 0
 
@@ -59,9 +59,9 @@ class TrailingStopLossBBbuyAfterSleep(Strategy):
 
         if not self.position:
             if not self.should_sleep():
-                self.current_stop_loss = 0
+                self.current_stop_loss = new_stop * self.intial_sl_factor
                 size = self.calculate_size()
-                self.buy(size=size)
+                self.buy(size=size, sl=self.current_stop_loss)
                 self.sleep_by = random.random() * 7 * 24 * 60
 
         elif new_stop > self.current_stop_loss and new_stop > self.trades[0].entry_price * 1.001:
@@ -70,4 +70,3 @@ class TrailingStopLossBBbuyAfterSleep(Strategy):
             self.current_stop_loss = new_stop
             self.stop_loose_changes = self.stop_loose_changes + 1
             # print(f"I'm recreating the stop loss {old_stop}, new: {new_stop}. Entry price {self.trades[0].entry_price}")
-
