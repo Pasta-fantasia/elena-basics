@@ -26,6 +26,28 @@ class TrailingStopLossBB(Bot):
 
     stop_loose_changes: int
 
+    @staticmethod
+    def _percentage_to_float(percentage):
+        percentage = percentage[:-1]  # Remove the percentage symbol
+        try:
+            float_value = float(percentage) / 100
+            return float_value
+        except ValueError:
+            raise ValueError("Invalid asset_to_manage format, use: 25% or 20.33% for percentages"
+                             "or 25 or 3.33 for exact asset quantities.")
+
+    def _get_max_asset_to_manage(self, balance_total: float):
+        if self.asset_to_manage.endswith('%'):
+            percentage_as_float = self._percentage_to_float(self.asset_to_manage)
+            return balance_total * percentage_as_float
+        else:
+            try:
+                float_value = float(self.asset_to_manage)
+                return float_value
+            except ValueError:
+                raise ValueError("Invalid asset_to_manage format, use: 25% or 20.33% for percentages "
+                                 "or 25 or 3.33 for exact asset quantities.")
+
     def init(self, manager: StrategyManager, logger: Logger, bot_config: BotConfig):
         self._manager = manager
         self._logger = logger
@@ -47,15 +69,41 @@ class TrailingStopLossBB(Bot):
     def next(self, status: BotStatus) -> BotStatus:
         self._logger.info('%s strategy: processing next cycle ...', self._name)
 
+        total_managed_asset = 0  # sum open orders amounts
+
+        # is there any free balance to handle?
         balance = self._manager.get_balance(self._exchange)
-        self._logger.info(balance)
+        base_symbol = self._bot_config.pair.base
+        total = balance.currencies[base_symbol].total
+        free = balance.currencies[base_symbol].free
+        total_to_manage = self._get_max_asset_to_manage(total)
+        new_order_size = total_to_manage - total_managed_asset
+        if free < new_order_size:
+            new_order_size = free
+
+        # calculate the new stop loss
         candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
+
+        # Indicator: Bollinger Bands (BBANDS)
         bbands = ta.bbands(close=candles.Close, length=self.bb_length, std=self.bb_mult)
+        bbands_lower_band = bbands[bbands.columns[0]]
+        # bbands_upper_band = bbands[bbands.columns[2]]
 
-        lower_band = bbands[bbands.columns[0]]
-        upper_band = bbands[bbands.columns[2]]
+        new_stop_loss = float(bbands_lower_band[-1:].iloc[0])  # get the last
 
-        new_stop = float(lower_band[-1:].iloc[0])
+        # update old orders
+        for order in status.orders:
+            # verify current stop loss if higher than new_stop_loss if not, update/cancel orders
+            # if we cancel orders we should add that balances to new_order_size ?
+            # how do we manage trades? to calculate profit
+            # also new orders should start at initial_sl_factor
+            pass
+
+        if new_order_size > 0:
+            new_order = self._manager.stop_loss_market(self._exchange, bot_config=self._bot_config,
+                                                       amount=new_order_size, stop_price=new_stop_loss)
+            status.orders.append(new_order)
+            # trades add
 
         '''
             Check model at https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#header-classes
@@ -88,5 +136,3 @@ class TrailingStopLossBB(Bot):
             
         '''
         return status
-
-
