@@ -7,6 +7,7 @@ from elena.domain.ports.strategy_manager import StrategyManager
 from elena.domain.model.exchange import Exchange
 from elena.domain.model.time_frame import TimeFrame
 from elena.domain.model.trading_pair import TradingPair
+from elena.domain.model.trade import Trade
 import pandas_ta as ta
 
 
@@ -70,6 +71,8 @@ class TrailingStopLossBB(Bot):
         self._logger.info('%s strategy: processing next cycle ...', self._name)
 
         total_managed_asset = 0  # sum open orders amounts
+        for order in status.active_orders:
+            total_managed_asset += order.amount
 
         # is there any free balance to handle?
         balance = self._manager.get_balance(self._exchange)
@@ -77,7 +80,10 @@ class TrailingStopLossBB(Bot):
         total = balance.currencies[base_symbol].total
         free = balance.currencies[base_symbol].free
         total_to_manage = self._get_max_asset_to_manage(total)
-        new_order_size = total_to_manage - total_managed_asset
+        new_order_size = round(total_to_manage - total_managed_asset, 8)
+
+        # TODO: new_order_size <- round to asset precision Read: https://docs.ccxt.com/#/README?id=currency-structure
+        #       market = exchange.market(symbol)
         if free < new_order_size:
             new_order_size = free
 
@@ -90,20 +96,45 @@ class TrailingStopLossBB(Bot):
         # bbands_upper_band = bbands[bbands.columns[2]]
 
         new_stop_loss = float(bbands_lower_band[-1:].iloc[0])  # get the last
+        price = float(bbands_lower_band[-2:-1].iloc[0])
+        if price > new_stop_loss:
+            price = new_stop_loss * 0.98  # fix price -2% of new_stop_loss
 
-        # update old orders
-        for order in status.orders:
+        # update active orders
+        for order in status.active_orders:
             # verify current stop loss if higher than new_stop_loss if not, update/cancel orders
             # if we cancel orders we should add that balances to new_order_size ?
             # how do we manage trades? to calculate profit
             # also new orders should start at initial_sl_factor
-            pass
+            if order.stop_price < new_stop_loss:
+                cancelled_order = new_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
+                                                                         order_id=order.id)
+                new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
+                                                          amount=order.amount, stop_price=new_stop_loss, price=price)
+                status.active_orders.append(new_order)
+                status.archived_orders.remove(order)
+                status.archived_orders.append(cancelled_order)
+                # trades update
 
         if new_order_size > 0:
-            new_order = self._manager.stop_loss_market(self._exchange, bot_config=self._bot_config,
-                                                       amount=new_order_size, stop_price=new_stop_loss)
-            status.orders.append(new_order)
+            last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
+            # check if entry_price is < new_stop_loss
+            if True:
+                new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
+                                                          amount=new_order_size, stop_price=new_stop_loss, price=price)
+                status.active_orders.append(new_order)
+                exit_order_id = new_order.id
+            else:
+                exit_order_id = 'detected new balance to manage'
+
             # trades add
+            new_trade = Trade(exchange_id=self._bot_config.exchange_id, bot_id=self._bot_config.id,
+                              strategy_id=self._bot_config.strategy_id, pair=self._bot_config.pair,
+                              size=new_order_size,
+                              entry_order_id='manual', entry_price=last_close,
+                              exit_order_id=exit_order_id, exit_price=new_stop_loss,
+                              )
+            status.active_trades.append(new_trade)
 
         '''
             Check model at https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#header-classes
