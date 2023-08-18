@@ -99,26 +99,30 @@ class TrailingStopLossBB(Bot):
         price = float(bbands_lower_band[-2:-1].iloc[0])
         if price > new_stop_loss:
             price = new_stop_loss * 0.98  # fix price -2% of new_stop_loss
+        last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
+        new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
 
         # update active orders
         for order in status.active_orders:
-            # verify current stop loss if higher than new_stop_loss if not, update/cancel orders
-            # if we cancel orders we should add that balances to new_order_size ?
-            # how do we manage trades? to calculate profit
-            # also new orders should start at initial_sl_factor
-            if order.stop_price < new_stop_loss:
+            # verify current stop loss if higher than new_stop_loss if not, cancel/create orders
+            # new orders should start at new_stop_loss_initial_sl_factor (if initial_sl_factor !=0)
+            # and moved with it until new_stop_loss > trade.entry_price
+            new_stop_loss_for_this_order = new_stop_loss
+            price_for_this_order = price
+            if order.stop_price < new_stop_loss_for_this_order:
                 cancelled_order = new_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
                                                                          order_id=order.id)
                 new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
-                                                          amount=order.amount, stop_price=new_stop_loss, price=price)
+                                                          amount=order.amount, stop_price=new_stop_loss_for_this_order,
+                                                          price=price_for_this_order)
                 status.active_orders.append(new_order)
                 status.archived_orders.remove(order)
                 status.archived_orders.append(cancelled_order)
                 # trades update
 
         if new_order_size > 0:
-            last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
             # check if entry_price is < new_stop_loss
+            # for each trade with exit_order_id == 'detected new balance to manage'
             if True:
                 new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
                                                           amount=new_order_size, stop_price=new_stop_loss, price=price)
