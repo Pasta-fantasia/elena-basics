@@ -37,3 +37,6 @@ TODOs moved out from code
         # TODO self._bot_manager.run() ?
         # - save any status
 
+
+As minute trader for testing
+<Strategy Moving_Stop_Loss_BB_buy_After_Sleep(bb_lenght=89,bb_mult=1,intial_sl_factor=0.8,reinvest=1)>
