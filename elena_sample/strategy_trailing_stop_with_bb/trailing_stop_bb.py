@@ -92,7 +92,7 @@ class TrailingStopLossBB(Bot):
             new_order_size = 0
 
         # calculate the new stop loss
-        candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
+        candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.min_1)
 
         # Indicator: Bollinger Bands (BBANDS)
         bbands = ta.bbands(close=candles.Close, length=self.bb_length, std=self.bb_mult)
@@ -105,6 +105,11 @@ class TrailingStopLossBB(Bot):
             price = new_stop_loss * 0.99  # fix price -1% of new_stop_loss
         last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
         new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
+
+        # TODO: new_stop_loss should be never higher than last_close
+        if new_stop_loss > last_close:
+            new_stop_loss = new_stop_loss_initial_sl_factor
+        # this is a fix for testing
 
         # update active orders
         for order in status.active_orders:
@@ -124,7 +129,7 @@ class TrailingStopLossBB(Bot):
                 status.archived_orders.append(cancelled_order)
                 # trades update
                 for trade in status.active_trades:
-                    if trade.exit_order_id == cancelled_order.id:
+                    if trade.exit_order_id == order.id:
                         trade.exit_order_id = new_order.id
 
 
