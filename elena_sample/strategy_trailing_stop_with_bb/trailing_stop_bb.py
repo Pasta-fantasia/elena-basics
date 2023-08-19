@@ -80,12 +80,16 @@ class TrailingStopLossBB(Bot):
         total = balance.currencies[base_symbol].total
         free = balance.currencies[base_symbol].free
         total_to_manage = self._get_max_asset_to_manage(total)
-        new_order_size = round(total_to_manage - total_managed_asset, 8)
+        new_order_size = round(total_to_manage - total_managed_asset, 4)
 
         # TODO: new_order_size <- round to asset precision Read: https://docs.ccxt.com/#/README?id=currency-structure
         #       market = exchange.market(symbol)
+        #       and check if it fits the minimum tradable
         if free < new_order_size:
             new_order_size = free
+
+        if new_order_size < 0.01: # for testing
+            new_order_size = 0
 
         # calculate the new stop loss
         candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
@@ -98,7 +102,7 @@ class TrailingStopLossBB(Bot):
         new_stop_loss = float(bbands_lower_band[-1:].iloc[0])  # get the last
         price = float(bbands_lower_band[-2:-1].iloc[0])
         if price > new_stop_loss:
-            price = new_stop_loss * 0.98  # fix price -2% of new_stop_loss
+            price = new_stop_loss * 0.99  # fix price -1% of new_stop_loss
         last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
         new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
 
@@ -110,15 +114,20 @@ class TrailingStopLossBB(Bot):
             new_stop_loss_for_this_order = new_stop_loss
             price_for_this_order = price
             if order.stop_price < new_stop_loss_for_this_order:
-                cancelled_order = new_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
+                cancelled_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
                                                                          order_id=order.id)
                 new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
                                                           amount=order.amount, stop_price=new_stop_loss_for_this_order,
                                                           price=price_for_this_order)
                 status.active_orders.append(new_order)
-                status.archived_orders.remove(order)
+                status.active_orders.remove(order)
                 status.archived_orders.append(cancelled_order)
                 # trades update
+                for trade in status.active_trades:
+                    if trade.exit_order_id == cancelled_order.id:
+                        trade.exit_order_id = new_order.id
+
+
 
         if new_order_size > 0:
             # check if entry_price is < new_stop_loss
