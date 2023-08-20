@@ -164,11 +164,11 @@ class TrailingStopLossBB(Bot):
                 # trades are open every time a new balance is detected but we may not have yet an sl order
                 # loop over trades and create sl orders for that trades that have a new_stop_loss over the entry_price
                 for trade in status.active_trades:
+                    amount = trade.size
                     if trade.exit_order_id == detected_new_balance:
-                        if new_stop_loss > trade.entry_price * (1 + self.sl_limit_price_factor):  # TODO: parametrize this fix percentages
+                        if new_stop_loss > trade.entry_price * (1 + self.sl_limit_price_factor):
                             new_stop_loss_for_this_order = new_stop_loss
                             price_for_this_order = price
-                            amount = trade.size
 
                             new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
                                                                       amount=amount,
@@ -177,9 +177,9 @@ class TrailingStopLossBB(Bot):
                             status.active_orders.append(new_order)
                             trade.exit_order_id = new_order.id
 
-                        # subs amount, if we got new balance we should add a new trade but only by the not controlled
-                        # already trades
-                        new_order_size = new_order_size - amount
+                    # subs amount, if we got new balance we should add a new trade but only by the not controlled
+                    # already trades
+                    new_order_size = new_order_size - amount
 
             # trades add
             if new_order_size > 0:
