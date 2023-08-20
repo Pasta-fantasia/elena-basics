@@ -23,6 +23,7 @@ class TrailingStopLossBB(Bot):
     bb_length: int
     bb_mult: float
     initial_sl_factor: float
+    sl_limit_price_factor: float
     asset_to_manage: str
 
     stop_loose_changes: int
@@ -60,6 +61,7 @@ class TrailingStopLossBB(Bot):
             self.bb_length = bot_config.config['bb_length']
             self.bb_mult = bot_config.config['bb_mult']
             self.initial_sl_factor = bot_config.config['initial_sl_factor']
+            self.sl_limit_price_factor = bot_config.config['sl_limit_price_factor']
             self.asset_to_manage = bot_config.config['asset_to_manage']
             # TODO [Pere] Is there some magic trick to do it? We can keep BotConfig as is, but...
         except Exception as err:
@@ -104,11 +106,10 @@ class TrailingStopLossBB(Bot):
         new_stop_loss = float(bbands_lower_band[-1:].iloc[0])  # get the last
         price = float(bbands_lower_band[-2:-1].iloc[0])
         if price > new_stop_loss:
-            price = new_stop_loss * 0.99  # fix price -1% of new_stop_loss
-            # TODO: parametrize this fix percentages
+            price = new_stop_loss * (1 - self.sl_limit_price_factor)
         last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
         new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
-        price_initial_sl_factor = new_stop_loss_initial_sl_factor * 0.99
+        price_initial_sl_factor = new_stop_loss_initial_sl_factor * (1 - self.sl_limit_price_factor)
 
         # TODO: new_stop_loss should be never higher than last_close
         if new_stop_loss > last_close:
@@ -129,7 +130,7 @@ class TrailingStopLossBB(Bot):
                     if trade.exit_order_id == order.id:
                         entry_price = trade.entry_price
 
-                if new_stop_loss_for_this_order > entry_price * 1.015:  # TODO: parametrize this fix percentages
+                if new_stop_loss_for_this_order > entry_price * (1 + self.sl_limit_price_factor):
                     cancelled_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
                                                                  order_id=order.id)
                     new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
@@ -164,7 +165,7 @@ class TrailingStopLossBB(Bot):
                 # loop over trades and create sl orders for that trades that have a new_stop_loss over the entry_price
                 for trade in status.active_trades:
                     if trade.exit_order_id == detected_new_balance:
-                        if new_stop_loss > trade.entry_price * 1.015:  # TODO: parametrize this fix percentages
+                        if new_stop_loss > trade.entry_price * (1 + self.sl_limit_price_factor):  # TODO: parametrize this fix percentages
                             new_stop_loss_for_this_order = new_stop_loss
                             price_for_this_order = price
                             amount = trade.size
