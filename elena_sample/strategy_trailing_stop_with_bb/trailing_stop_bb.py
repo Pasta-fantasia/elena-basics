@@ -92,11 +92,11 @@ class TrailingStopLossBB(Bot):
         if free < new_order_size:
             new_order_size = free
 
-        if new_order_size < 0.01:  # for testing
+        if new_order_size < 0.001:  # TODO: this limit is for testing, should come from market = exchange.market(symbol)
             new_order_size = 0
 
         # calculate the new stop loss
-        candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.min_1)
+        candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
 
         # Indicator: Bollinger Bands (BBANDS)
         bbands = ta.bbands(close=candles.Close, length=self.bb_length, std=self.bb_mult)

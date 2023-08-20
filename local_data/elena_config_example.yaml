@@ -1,31 +1,45 @@
 Strategies:
-  - id: SAMPLE-1
-    name: Sample strategy 1
-    strategy_class: elena_sample.strategy_trailing_stop_with_bb.trailing_stop_bb.TrailingStopLossBBbuyAfterSleep
+  - id: TrailingStopLossBB
+    name: TrailingStopLossBB
     enabled: true
+    strategy_class: elena_sample.strategy_trailing_stop_with_bb.trailing_stop_bb.TrailingStopLossBB
+
     bots:
-      - id: SAM-1.1
-        name: Sample strategy 1 bot 1
+      - id: BTC_USDT_1
+        name: TrailingStopLossBB BTC/USDT
         enabled: true
-        pair: ETH/USDT
-        exchange: kucoin
+        pair: BTC/USDT
+        exchange: binance
         tags:
-          - ranging
+          - TrailingStopLossBB
           - bear
         config:
-          key1: value1
-          key2: value2
-      - id: SAM-1.2
-        name: Sample strategy 1 bot 2
-        enabled: false
-        pair: BTC/USDC
-        exchange: bitget
-        tags:
-          - bull
-        config:
-          key1: value1
-          key2: value2
+          bb_length: 3
+          bb_mult: 3
+          initial_sl_factor: 0
+          sl_limit_price_factor: 0.01 # % of price limit on the sl limit order. it's used for minimal benefit too.
+          asset_to_manage: 100%
+#      - id: BTC_USDT_2
+#        name: TrailingStopLossBB BTC/USDT
+#        enabled: true
+#        pair: BTC/USDT
+#        exchange: binance
+#        tags:
+#          - TrailingStopLossBB
+#          - bear
+#        config:
+#          bb_length: 5
+#          bb_mult: 3
+#          initial_sl_factor: 0.7
+#          asset_to_manage: 48.34%
+
 Exchanges:
+  - id: binance
+    enabled: true
+    sandbox_mode: true
+    api_key: ***REMOVED***
+    password: not_in_use
+    secret: ***REMOVED***
   - id: bitget
     enabled: true
     sandbox_mode: true
@@ -45,3 +59,9 @@ Tags:
     enabled: false
   - id: ranging
     enabled: true
+  - id: TrailingStopLossBB
+    enabled: true
+
+CctxExchangeManager:
+  fetch_ohlcv_limit: 100
+  fetch_ohlcv_limit_retry_every_milliseconds: 1000
