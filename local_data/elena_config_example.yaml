@@ -52,6 +52,7 @@ Exchanges:
     api_key: ***REMOVED***
     password: ***REMOVED***
     secret: ***REMOVED***
+
 Tags:
   - id: bear
     enabled: true
