@@ -129,7 +129,7 @@ class TrailingStopLossBB(Bot):
                     if trade.exit_order_id == order.id:
                         entry_price = trade.entry_price
 
-                if entry_price < new_stop_loss_for_this_order * 1.015:  # TODO: parametrize this fix percentages
+                if new_stop_loss_for_this_order > entry_price * 1.015:  # TODO: parametrize this fix percentages
                     cancelled_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
                                                                  order_id=order.id)
                     new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
@@ -164,7 +164,7 @@ class TrailingStopLossBB(Bot):
                 # loop over trades and create sl orders for that trades that have a new_stop_loss over the entry_price
                 for trade in status.active_trades:
                     if trade.exit_order_id == detected_new_balance:
-                        if trade.entry_price < new_stop_loss * 1.015:  # TODO: parametrize this fix percentages
+                        if new_stop_loss > trade.entry_price * 1.015:  # TODO: parametrize this fix percentages
                             new_stop_loss_for_this_order = new_stop_loss
                             price_for_this_order = price
                             amount = trade.size
