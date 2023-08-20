@@ -191,34 +191,4 @@ class TrailingStopLossBB(Bot):
                                   )
                 status.active_trades.append(new_trade)
 
-        '''
-            Check model at https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#header-classes
-            asset=(in BTCBUSD, is BTC)
-            
-            for order in orders:
-                check status
-                if status==close:
-                    update .trades and move the record to closed_trades 
-                    notify("SL execute, check your positions")
-                    remove it from orders and trades
-                else:
-                    sum the remaning assets balance (orders can may be "partial")
-                
-            check asset balance 
-            calculare max balance to handle 
-            calculate new SL
-            
-            for order in orders:
-                if new SL>order.SL
-                    cancel order
-                    create a new order with "new SL"
-                    
-            if "max balance to handle">"sum the remaning assets balance":
-                new order size is ("max balance to handle" - "sum the remaning assets balance")
-                create a new order with "new SL" for "new order size"
-                notify("found more balance and handling it")
-            
-            notify_on_order_status_change can be a property ser on Strategy.init... not a bot parameter
-            
-        '''
         return status
