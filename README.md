@@ -38,5 +38,36 @@ TODOs moved out from code
         # - save any status
 
 
-As minute trader for testing
-<Strategy Moving_Stop_Loss_BB_buy_After_Sleep(bb_lenght=89,bb_mult=1,intial_sl_factor=0.8,reinvest=1)>
+# Installation for first testing
+
+(venv) elena2@localhost:~$ history 
+
+    8  python3 -m venv venv
+    9  source ~/venv/bin/activate
+   10  echo "source ~/venv/bin/activate" >> .bashrc
+
+   12  git clone git@github.com:Pasta-fantasia/elena.git
+   13  cd elena/
+   14  git fetch origin
+   15  git branch -a
+   16  git switch feature/TODOs
+   17  git pull
+   18  git config pull.rebase false
+   20  pip install -e .
+   21  cd ..
+   22  git clone git@github.com:Pasta-fantasia/elena-sample.git
+   23  cd elena-sample/
+   24  pip install -e .
+   25  cd
+   26  echo "export ELENA_HOME=/......./L_working" >> .bashrc
+
+   30  mkdir /......./L_working
+   31  elena
+   32  cp elena-sample/local_data/elena_config_example.yaml L_working/elena_config.yaml
+   37  joe elena_config.yaml 
+
+   33  joe cron.sh
+   34  chmod a+x cron.sh 
+   35  crontab -e
+
+
