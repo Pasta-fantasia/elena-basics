@@ -85,10 +85,12 @@ class TrailingStopLossBB(Bot):
         # TODO: new_order_size <- round to asset precision Read: https://docs.ccxt.com/#/README?id=currency-structure
         #       market = exchange.market(symbol)
         #       and check if it fits the minimum tradable
+        #       we also need access other limits like market['info']['filters'] #['filterType']['MAX_NUM_ALGO_ORDERS']
+
         if free < new_order_size:
             new_order_size = free
 
-        if new_order_size < 0.01: # for testing
+        if new_order_size < 0.01:  # for testing
             new_order_size = 0
 
         # calculate the new stop loss
@@ -103,8 +105,10 @@ class TrailingStopLossBB(Bot):
         price = float(bbands_lower_band[-2:-1].iloc[0])
         if price > new_stop_loss:
             price = new_stop_loss * 0.99  # fix price -1% of new_stop_loss
+            # TODO: parametrize this fix percentages
         last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
         new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
+        price_initial_sl_factor = new_stop_loss_initial_sl_factor * 0.99
 
         # TODO: new_stop_loss should be never higher than last_close
         if new_stop_loss > last_close:
@@ -114,45 +118,77 @@ class TrailingStopLossBB(Bot):
         # update active orders
         for order in status.active_orders:
             # verify current stop loss if higher than new_stop_loss if not, cancel/create orders
-            # new orders should start at new_stop_loss_initial_sl_factor (if initial_sl_factor !=0)
-            # and moved with it until new_stop_loss > trade.entry_price
+            # new orders may start at new_stop_loss_initial_sl_factor (if initial_sl_factor !=0)
+            # that orders will remain untouched
+            # once entry_price < new_stop_loss_for_this_order * 1.015 we start moving the sl
             new_stop_loss_for_this_order = new_stop_loss
             price_for_this_order = price
             if order.stop_price < new_stop_loss_for_this_order:
-                cancelled_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
-                                                                         order_id=order.id)
-                new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
-                                                          amount=order.amount, stop_price=new_stop_loss_for_this_order,
-                                                          price=price_for_this_order)
-                status.active_orders.append(new_order)
-                status.active_orders.remove(order)
-                status.archived_orders.append(cancelled_order)
-                # trades update
+                # find
                 for trade in status.active_trades:
                     if trade.exit_order_id == order.id:
-                        trade.exit_order_id = new_order.id
+                        entry_price = trade.entry_price
 
-
+                if entry_price < new_stop_loss_for_this_order * 1.015:  # TODO: parametrize this fix percentages
+                    cancelled_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
+                                                                 order_id=order.id)
+                    new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
+                                                              amount=order.amount, stop_price=new_stop_loss_for_this_order,
+                                                              price=price_for_this_order)
+                    status.active_orders.append(new_order)
+                    status.active_orders.remove(order)
+                    status.archived_orders.append(cancelled_order)
+                    # trades update
+                    for trade in status.active_trades:
+                        if trade.exit_order_id == order.id:
+                            trade.exit_order_id = new_order.id
 
         if new_order_size > 0:
-            # check if entry_price is < new_stop_loss
-            # for each trade with exit_order_id == 'detected new balance to manage'
-            if True:
+            detected_new_balance = 'detected new balance to manage'
+
+            if self.initial_sl_factor != 0:
+                # we have an initial_sl_factor so, we create an order every time we detect new balance
+                new_stop_loss_for_this_order = new_stop_loss_initial_sl_factor
+                price_for_this_order = price_initial_sl_factor
+                # this order could be a delta/trailing one.
                 new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
-                                                          amount=new_order_size, stop_price=new_stop_loss, price=price)
+                                                          amount=new_order_size,
+                                                          stop_price=new_stop_loss_for_this_order,
+                                                          price=price_for_this_order)
                 status.active_orders.append(new_order)
                 exit_order_id = new_order.id
             else:
-                exit_order_id = 'detected new balance to manage'
+                exit_order_id = detected_new_balance
+                # if we are here is we don't have initial_sl_factor
+                # trades are open every time a new balance is detected but we may not have yet an sl order
+                # loop over trades and create sl orders for that trades that have a new_stop_loss over the entry_price
+                for trade in status.active_trades:
+                    if trade.exit_order_id == detected_new_balance:
+                        if trade.entry_price < new_stop_loss * 1.015:  # TODO: parametrize this fix percentages
+                            new_stop_loss_for_this_order = new_stop_loss
+                            price_for_this_order = price
+                            amount = trade.size
+
+                            new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
+                                                                      amount=amount,
+                                                                      stop_price=new_stop_loss_for_this_order,
+                                                                      price=price_for_this_order)
+                            status.active_orders.append(new_order)
+                            trade.exit_order_id = new_order.id
+
+                        # subs amount, if we got new balance we should add a new trade but only by the not controlled
+                        # already trades
+                        new_order_size = new_order_size - amount
 
             # trades add
-            new_trade = Trade(exchange_id=self._bot_config.exchange_id, bot_id=self._bot_config.id,
-                              strategy_id=self._bot_config.strategy_id, pair=self._bot_config.pair,
-                              size=new_order_size,
-                              entry_order_id='manual', entry_price=last_close,
-                              exit_order_id=exit_order_id, exit_price=new_stop_loss,
-                              )
-            status.active_trades.append(new_trade)
+            if new_order_size > 0:
+                new_trade = Trade(exchange_id=self._bot_config.exchange_id, bot_id=self._bot_config.id,
+                                  strategy_id=self._bot_config.strategy_id, pair=self._bot_config.pair,
+                                  size=new_order_size,
+                                  entry_order_id='manual', entry_price=last_close,
+                                  exit_order_id=exit_order_id, exit_price=new_stop_loss,
+                                  )
+                status.active_trades.append(new_trade)
 
         '''
             Check model at https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#header-classes
