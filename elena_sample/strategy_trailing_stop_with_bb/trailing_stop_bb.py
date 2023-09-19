@@ -83,7 +83,6 @@ class TrailingStopLossBB(Bot):
         free = balance.currencies[base_symbol].free
         total_to_manage = self._get_max_asset_to_manage(total)
         new_order_size = round(total_to_manage - total_managed_asset, 4)
-        new_order_size = free
 
         # TODO: new_order_size <- round to asset precision Read: https://docs.ccxt.com/#/README?id=currency-structure
         #       market = exchange.market(symbol)
