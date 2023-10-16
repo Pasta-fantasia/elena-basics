@@ -77,6 +77,7 @@ class TrailingStopLossBB(Bot):
         #     total_managed_asset += order.amount
 
         for trade in status.active_trades:
+            self._logger.info(trade)
             total_managed_asset += trade.size
 
         # is there any free balance to handle?
