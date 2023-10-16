@@ -73,8 +73,11 @@ class TrailingStopLossBB(Bot):
         self._logger.info('%s strategy: processing next cycle ...', self._name)
 
         total_managed_asset = 0  # sum open orders amounts
-        for order in status.active_orders:
-            total_managed_asset += order.amount
+        # for order in status.active_orders:
+        #     total_managed_asset += order.amount
+
+        for trade in status.active_trades:
+            total_managed_asset += trade.size
 
         # is there any free balance to handle?
         balance = self._manager.get_balance(self._exchange)
@@ -82,18 +85,18 @@ class TrailingStopLossBB(Bot):
         total = balance.currencies[base_symbol].total
         free = balance.currencies[base_symbol].free
         total_to_manage = self._get_max_asset_to_manage(total)
-        new_order_size = round(total_to_manage - total_managed_asset, 4)
+        new_trade_size = round(total_to_manage - total_managed_asset, 4)
 
-        # TODO: new_order_size <- round to asset precision Read: https://docs.ccxt.com/#/README?id=currency-structure
+        # TODO: new_trade_size <- round to asset precision Read: https://docs.ccxt.com/#/README?id=currency-structure
         #       market = exchange.market(symbol)
         #       and check if it fits the minimum tradable
         #       we also need access other limits like market['info']['filters'] #['filterType']['MAX_NUM_ALGO_ORDERS']
 
-        if free < new_order_size:
-            new_order_size = free
+        if free < new_trade_size:
+            new_trade_size = free
 
-        if new_order_size < 0.001:  # TODO: this limit is for testing, should come from market = exchange.market(symbol)
-            new_order_size = 0
+        if new_trade_size < 0.001:  # TODO: this limit is for testing, should come from market = exchange.market(symbol)
+            new_trade_size = 0
 
         # calculate the new stop loss
         candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
@@ -144,8 +147,8 @@ class TrailingStopLossBB(Bot):
                         if trade.exit_order_id == order.id:
                             trade.exit_order_id = new_order.id
 
-        if new_order_size > 0:
-            detected_new_balance = 'detected new balance to manage'
+        detected_new_balance = 'detected new balance to manage'
+        if new_trade_size > 0:
 
             if self.initial_sl_factor != 0:
                 # we have an initial_sl_factor so, we create an order every time we detect new balance
@@ -153,42 +156,38 @@ class TrailingStopLossBB(Bot):
                 price_for_this_order = price_initial_sl_factor
                 # this order could be a delta/trailing one.
                 new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
-                                                          amount=new_order_size,
+                                                          amount=new_trade_size,
                                                           stop_price=new_stop_loss_for_this_order,
                                                           price=price_for_this_order)
                 status.active_orders.append(new_order)
                 exit_order_id = new_order.id
             else:
                 exit_order_id = detected_new_balance
-                # if we are here is we don't have initial_sl_factor
-                # trades are open every time a new balance is detected but we may not have yet an sl order
-                # loop over trades and create sl orders for that trades that have a new_stop_loss over the entry_price
-                for trade in status.active_trades:
-                    amount = trade.size
-                    if trade.exit_order_id == detected_new_balance:
-                        if new_stop_loss > trade.entry_price * (1 + self.sl_limit_price_factor):
-                            new_stop_loss_for_this_order = new_stop_loss
-                            price_for_this_order = price
 
-                            new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
-                                                                      amount=amount,
-                                                                      stop_price=new_stop_loss_for_this_order,
-                                                                      price=price_for_this_order)
-                            status.active_orders.append(new_order)
-                            trade.exit_order_id = new_order.id
+            new_trade = Trade(exchange_id=self._bot_config.exchange_id, bot_id=self._bot_config.id,
+                              strategy_id=self._bot_config.strategy_id, pair=self._bot_config.pair,
+                              size=new_trade_size,
+                              entry_order_id='manual', entry_price=last_close,
+                              exit_order_id=exit_order_id, exit_price=new_stop_loss,
+                              )
+            status.active_trades.append(new_trade)
 
-                    # subs amount, if we got new balance we should add a new trade but only by the not controlled
-                    # already trades
-                    new_order_size = new_order_size - amount
+        # trades are open every time a new balance is detected
+        # loop over trades and create sl orders for that trades that are detected_new_balance
+        #  and have a new_stop_loss over the entry_price
 
-            # trades add
-            if new_order_size > 0:
-                new_trade = Trade(exchange_id=self._bot_config.exchange_id, bot_id=self._bot_config.id,
-                                  strategy_id=self._bot_config.strategy_id, pair=self._bot_config.pair,
-                                  size=new_order_size,
-                                  entry_order_id='manual', entry_price=last_close,
-                                  exit_order_id=exit_order_id, exit_price=new_stop_loss,
-                                  )
-                status.active_trades.append(new_trade)
+        for trade in status.active_trades:
+            if trade.exit_order_id == detected_new_balance:
+                amount = trade.size
+                if new_stop_loss > trade.entry_price * (1 + self.sl_limit_price_factor):
+                    new_stop_loss_for_this_order = new_stop_loss
+                    price_for_this_order = price
+
+                    new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
+                                                              amount=amount,
+                                                              stop_price=new_stop_loss_for_this_order,
+                                                              price=price_for_this_order)
+                    status.active_orders.append(new_order)
+                    trade.exit_order_id = new_order.id
 
         return status
