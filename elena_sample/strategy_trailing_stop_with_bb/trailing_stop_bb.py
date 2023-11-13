@@ -11,7 +11,7 @@ from elena.domain.model.trade import Trade
 import pandas_ta as ta
 
 
-class TrailingStopLossBB(Bot):
+class TrailingStopLoss(Bot):
     # Trailing Stop Loss using BB
 
     _manager: StrategyManager
@@ -70,6 +70,7 @@ class TrailingStopLossBB(Bot):
             # TODO [Pere] Should we raise it? _get_bot_instance
 
     def next(self, status: BotStatus) -> BotStatus:
+        # TODO: cron https://pypi.org/project/cron-converter/
         self._logger.info('%s strategy: processing next cycle ...', self._name)
 
         total_managed_asset = 0  # sum open orders amounts
@@ -100,17 +101,24 @@ class TrailingStopLossBB(Bot):
             new_trade_size = 0
 
         # calculate the new stop loss
-        candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.hour_1)
+        candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.day_1)
 
         # Indicator: Bollinger Bands (BBANDS)
-        bbands = ta.bbands(close=candles.Close, length=self.bb_length, std=self.bb_mult)
-        bbands_lower_band = bbands[bbands.columns[0]]
+        # bbands = ta.bbands(close=candles.Close, length=self.bb_length, std=self.bb_mult)
+        # lower_band_bb = bbands[bbands.columns[0]]
         # bbands_upper_band = bbands[bbands.columns[2]]
+        # new_stop_loss_bb = float(lower_band_bb[-1:].iloc[0])
 
-        new_stop_loss = float(bbands_lower_band[-1:].iloc[0])  # get the last
-        price = float(bbands_lower_band[-2:-1].iloc[0])
+        # Indicator: Standard Error Bands based on DEMA
+        dema = ta.dema(close=candles.Close, length=self.bb_length)
+        stdev = ta.stdev(close=candles.Close, length=self.bb_length)
+        lower_band = dema - (self.bb_mult * stdev)
+
+        new_stop_loss = float(lower_band[-1:].iloc[0])  # get the last
+        price = float(lower_band[-2:-1].iloc[0])
         if price > new_stop_loss:
-            price = new_stop_loss * (1 - self.sl_limit_price_factor)
+            price = new_stop_loss * 0.995  # TODO: Think how to do it
+
         last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
         new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
         price_initial_sl_factor = new_stop_loss_initial_sl_factor * (1 - self.sl_limit_price_factor)
@@ -128,7 +136,7 @@ class TrailingStopLossBB(Bot):
             # once entry_price < new_stop_loss_for_this_order * 1.015 we start moving the sl
             new_stop_loss_for_this_order = new_stop_loss
             price_for_this_order = price
-            if order.stop_price < new_stop_loss_for_this_order:
+            if new_stop_loss_for_this_order > order.stop_price:
                 # find
                 for trade in status.active_trades:
                     if trade.exit_order_id == order.id:

@@ -1,17 +1,17 @@
 Strategies:
-  - id: TrailingStopLossBB
-    name: TrailingStopLossBB
+  - id: TrailingStopLoss
+    name: TrailingStopLoss
     enabled: true
-    strategy_class: elena_sample.strategy_trailing_stop_with_bb.trailing_stop_bb.TrailingStopLossBB
+    strategy_class: elena_sample.strategy_trailing_stop_with_bb.trailing_stop_bb.TrailingStopLoss
 
     bots:
       - id: BTC_USDT_1
-        name: TrailingStopLossBB BTC/USDT
+        name: TrailingStopLoss BTC/USDT
         enabled: true
         pair: BTC/USDT
         exchange: binance
         tags:
-          - TrailingStopLossBB
+          - TrailingStopLoss
           - bear
         config:
           bb_length: 3
@@ -20,12 +20,12 @@ Strategies:
           sl_limit_price_factor: 0.01 # % of price limit on the sl limit order. it's used for minimal benefit too.
           asset_to_manage: 100%
 #      - id: BTC_USDT_2
-#        name: TrailingStopLossBB BTC/USDT
+#        name: TrailingStopLoss BTC/USDT
 #        enabled: true
 #        pair: BTC/USDT
 #        exchange: binance
 #        tags:
-#          - TrailingStopLossBB
+#          - TrailingStopLoss
 #          - bear
 #        config:
 #          bb_length: 5
@@ -60,7 +60,7 @@ Tags:
     enabled: false
   - id: ranging
     enabled: true
-  - id: TrailingStopLossBB
+  - id: TrailingStopLoss
     enabled: true
 
 CctxExchangeManager:
