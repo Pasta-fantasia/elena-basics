@@ -14,24 +14,12 @@ Strategies:
           - TrailingStopLoss
           - bear
         config:
-          bb_length: 3
-          bb_mult: 3
+          band_length: 3
+          band_mult: 3
           initial_sl_factor: 0
           sl_limit_price_factor: 0.01 # % of price limit on the sl limit order. it's used for minimal benefit too.
           asset_to_manage: 100%
-#      - id: BTC_USDT_2
-#        name: TrailingStopLoss BTC/USDT
-#        enabled: true
-#        pair: BTC/USDT
-#        exchange: binance
-#        tags:
-#          - TrailingStopLoss
-#          - bear
-#        config:
-#          bb_length: 5
-#          bb_mult: 3
-#          initial_sl_factor: 0.7
-#          asset_to_manage: 48.34%
+
 
 Exchanges:
   - id: binance

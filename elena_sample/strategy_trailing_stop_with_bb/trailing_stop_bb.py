@@ -20,8 +20,8 @@ class TrailingStopLoss(Bot):
     _bot_config: BotConfig
     _exchange: Exchange
 
-    bb_length: int
-    bb_mult: float
+    band_length: int
+    band_mult: float
     initial_sl_factor: float
     sl_limit_price_factor: float
     asset_to_manage: str
@@ -58,8 +58,8 @@ class TrailingStopLoss(Bot):
         self._exchange = self._manager.get_exchange(self._bot_config.exchange_id)
 
         try:
-            self.bb_length = bot_config.config['bb_length']
-            self.bb_mult = bot_config.config['bb_mult']
+            self.band_length = bot_config.config['band_length']
+            self.band_mult = bot_config.config['band_mult']
             self.initial_sl_factor = bot_config.config['initial_sl_factor']
             self.sl_limit_price_factor = bot_config.config['sl_limit_price_factor']
             self.asset_to_manage = bot_config.config['asset_to_manage']
@@ -70,7 +70,6 @@ class TrailingStopLoss(Bot):
             # TODO [Pere] Should we raise it? _get_bot_instance
 
     def next(self, status: BotStatus) -> BotStatus:
-        # TODO: cron https://pypi.org/project/cron-converter/
         self._logger.info('%s strategy: processing next cycle ...', self._name)
 
         total_managed_asset = 0  # sum open orders amounts
@@ -104,15 +103,15 @@ class TrailingStopLoss(Bot):
         candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.day_1)
 
         # Indicator: Bollinger Bands (BBANDS)
-        # bbands = ta.bbands(close=candles.Close, length=self.bb_length, std=self.bb_mult)
+        # bbands = ta.bbands(close=candles.Close, length=self.band_length, std=self.band_mult)
         # lower_band_bb = bbands[bbands.columns[0]]
         # bbands_upper_band = bbands[bbands.columns[2]]
         # new_stop_loss_bb = float(lower_band_bb[-1:].iloc[0])
 
         # Indicator: Standard Error Bands based on DEMA
-        dema = ta.dema(close=candles.Close, length=self.bb_length)
-        stdev = ta.stdev(close=candles.Close, length=self.bb_length)
-        lower_band = dema - (self.bb_mult * stdev)
+        dema = ta.dema(close=candles.Close, length=self.band_length)
+        stdev = ta.stdev(close=candles.Close, length=self.band_length)
+        lower_band = dema - (self.band_mult * stdev)
 
         new_stop_loss = float(lower_band[-1:].iloc[0])  # get the last
         price = float(lower_band[-2:-1].iloc[0])
@@ -145,12 +144,14 @@ class TrailingStopLoss(Bot):
                 if new_stop_loss_for_this_order > entry_price * (1 + self.sl_limit_price_factor):
                     cancelled_order = self._manager.cancel_order(self._exchange, bot_config=self._bot_config,
                                                                  order_id=order.id)
+
+                    # TODO: Group all cancelled orders into a new one.
                     new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
                                                               amount=order.amount, stop_price=new_stop_loss_for_this_order,
                                                               price=price_for_this_order)
                     status.active_orders.append(new_order)
                     status.active_orders.remove(order)
-                    status.archived_orders.append(cancelled_order)
+                    status.archived_orders.append(cancelled_order) # TODO: Check cancelled_order sometimes is None. Should we keep order insted?
                     # trades update
                     for trade in status.active_trades:
                         if trade.exit_order_id == order.id:
