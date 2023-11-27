@@ -4,7 +4,7 @@ from elena import __version__ as version
 import time
 
 
-### for testing only!!!!
+### for debugin only!!!!
 
 def main():
     # debug using ELENA_HOME pointing to ./local_data
