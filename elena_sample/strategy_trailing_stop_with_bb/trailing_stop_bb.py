@@ -96,7 +96,7 @@ class TrailingStopLoss(Bot):
         if free < new_trade_size:
             new_trade_size = free
 
-        min_amount = self._manager.limit_min_amount(self._exchange, self._bot_config)
+        min_amount = self._manager.limit_min_amount(self._exchange, self._bot_config.pair)
         if new_trade_size < min_amount:
             new_trade_size = 0
 
@@ -127,6 +127,11 @@ class TrailingStopLoss(Bot):
         if new_stop_loss > last_close:
             new_stop_loss = new_stop_loss_initial_sl_factor
         # this is a fix for testing
+
+        # correct precisions for exchange
+        new_stop_loss = self._manager.price_to_precision(self._exchange, self._bot_config.pair, new_stop_loss)
+        price = self._manager.price_to_precision(self._exchange, self._bot_config.pair, price)
+        new_trade_size = self._manager.amount_to_precision(self._exchange, self._bot_config.pair, new_trade_size)
 
         # update active orders
         for order in status.active_orders:
@@ -160,7 +165,6 @@ class TrailingStopLoss(Bot):
 
         detected_new_balance = 'detected new balance to manage'
         if new_trade_size > 0:
-
             if self.initial_sl_factor != 0:
                 # we have an initial_sl_factor so, we create an order every time we detect new balance
                 new_stop_loss_for_this_order = new_stop_loss_initial_sl_factor
