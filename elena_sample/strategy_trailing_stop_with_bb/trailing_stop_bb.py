@@ -96,7 +96,8 @@ class TrailingStopLoss(Bot):
         if free < new_trade_size:
             new_trade_size = free
 
-        if new_trade_size < 0.001:  # TODO: this limit is for testing, should come from market = exchange.market(symbol)
+        min_amount = self._manager.limit_min_amount(self._exchange, self._bot_config)
+        if new_trade_size < min_amount:
             new_trade_size = 0
 
         # calculate the new stop loss
