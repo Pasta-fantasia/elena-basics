@@ -3,8 +3,8 @@ from elena.adapters.config.local_config_reader import LocalConfigReader
 from elena import __version__ as version
 import time
 
+# for debugging only!!!!
 
-### for debugin only!!!!
 
 def main():
     # debug using ELENA_HOME pointing to ./local_data
