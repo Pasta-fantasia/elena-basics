@@ -82,14 +82,16 @@ class TrailingStopLoss(GenericBot):
         # Cancel any active stop order with a limit lower than the new one.
         # return the total amount of canceled orders
         total_amount_canceled_orders = 0
+        canceled_orders = []
         for order in status.active_orders:
             if new_stop_loss > order.stop_price:
                 cancelled_order = self.cancel_order(order.id)
                 if cancelled_order:
                     total_amount_canceled_orders = total_amount_canceled_orders + order.amount
+                    canceled_orders.append(order.id)
                 else:
                     self._logger.error(f"Error canceling order: {order.id}.")
-        return total_amount_canceled_orders
+        return total_amount_canceled_orders, canceled_orders
 
     def init(self, manager: StrategyManager, logger: Logger, bot_config: BotConfig):  # type: ignore
         super().init(manager, logger, bot_config)
@@ -169,26 +171,36 @@ class TrailingStopLoss(GenericBot):
                               )
             status.active_trades.append(new_trade)
 
-        # (4) OLD Trades logic
+        # (4) OLD Trades logic & cancelled orders
 
         # trades are open every time a new balance is detected
         # loop over trades and create sl orders for that trades that are detected_new_balance
         #  and have a new_stop_loss over the entry_price
         # Create only one order and add total_amount_canceled_orders
 
-        total_amount_canceled_orders = self._cancel_active_orders_with_lower_stop_loss(status, new_stop_loss)
+        total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(status, new_stop_loss)
+        new_trades_on_limit = 0
 
+        # find trades that get the limit to start trailing stops
         for trade in status.active_trades:
             if trade.exit_order_id == detected_new_balance:
-                amount = trade.size
                 if new_stop_loss > trade.entry_price * (1 + self.sl_limit_price_factor):
-                    new_stop_loss_for_this_order = new_stop_loss
-                    price_for_this_order = price
+                    trade.exit_order_id = "new_grouped_order"
+                    new_trades_on_limit = new_trades_on_limit + trade.size
 
-                    new_order = self.stop_loss_limit(amount=amount,
-                                                     stop_price=new_stop_loss_for_this_order,
-                                                     price=price_for_this_order)
-                    status.active_orders.append(new_order)
-                    trade.exit_order_id = new_order.id
+        # create a new stop order with the sum of all canceled orders + the trades that enter the limit
+        grouped_amount_canceled_orders_and_new_trades = total_amount_canceled_orders + new_trades_on_limit
+
+        new_order = self.stop_loss_limit(amount=grouped_amount_canceled_orders_and_new_trades,
+                                         stop_price=new_stop_loss,
+                                         price=price)
+
+        canceled_orders.append("new_grouped_order")
+
+        # update trades with the new_order_id
+        for trade in status.active_trades:
+            if trade.exit_order_id in canceled_orders:
+                trade.exit_order_id = new_order.id
+                trade.exit_price = new_stop_loss  # not real until the stop loss really executes.
 
         return status
