@@ -52,17 +52,31 @@ class TrailingStopLoss(GenericBot):
                 raise ValueError("Invalid asset_to_manage format, use: 25% or 20.33% for percentages "
                                  "or 25 or 3.33 for exact asset quantities.")
 
-    def init(self, manager: StrategyManager, logger: Logger, bot_config: BotConfig):  # type: ignore
-        super().init(manager, logger, bot_config)
+    def _calculate_new_trade_size(self, status: BotStatus) -> float:
+        # do we have any new balance to handle?
 
-        try:
-            self.band_length = bot_config.config['band_length']
-            self.band_mult = bot_config.config['band_mult']
-            self.initial_sl_factor = bot_config.config['initial_sl_factor']
-            self.sl_limit_price_factor = bot_config.config['sl_limit_price_factor']
-            self.asset_to_manage = bot_config.config['asset_to_manage']
-        except Exception as err:
-            self._logger.error(f"Error initializing Bot config: {err}", error=err)
+        total_managed_asset = 0
+        # sum open trades amounts
+        for trade in status.active_trades:
+            self._logger.info(trade)
+            total_managed_asset += trade.size
+
+        balance = self.get_balance()
+
+        base_symbol = self.pair.base
+        base_total = balance.currencies[base_symbol].total
+        base_free = balance.currencies[base_symbol].free
+        total_to_manage = self._get_max_asset_to_manage(base_total)
+        new_trade_size = total_to_manage - total_managed_asset
+
+        if base_free < new_trade_size:
+            new_trade_size = base_free
+
+        min_amount = self.limit_min_amount()
+        if new_trade_size < min_amount:
+            new_trade_size = 0
+
+        return new_trade_size
 
     def _cancel_active_orders_with_lower_stop_loss(self, status: BotStatus, new_stop_loss: float) -> float:
         # Cancel any active stop order with a limit lower than the new one.
@@ -77,35 +91,27 @@ class TrailingStopLoss(GenericBot):
                     self._logger.error(f"Error canceling order: {order.id}.")
         return total_amount_canceled_orders
 
+    def init(self, manager: StrategyManager, logger: Logger, bot_config: BotConfig):  # type: ignore
+        super().init(manager, logger, bot_config)
+
+        try:
+            self.band_length = bot_config.config['band_length']
+            self.band_mult = bot_config.config['band_mult']
+            self.initial_sl_factor = bot_config.config['initial_sl_factor']
+            self.sl_limit_price_factor = bot_config.config['sl_limit_price_factor']
+            self.asset_to_manage = bot_config.config['asset_to_manage']
+        except Exception as err:
+            self._logger.error(f"Error initializing Bot config: {err}", error=err)
+
     def next(self, status: BotStatus) -> BotStatus:
         self._logger.info('%s strategy: processing next cycle ...', self.name)
 
-        total_managed_asset = 0  # sum open orders amounts
-        # for order in status.active_orders:
-        #     total_managed_asset += order.amount
-
-        for trade in status.active_trades:
-            self._logger.info(trade)
-            total_managed_asset += trade.size
-
         # (1) is there any free balance to handle?
-        balance = self.get_balance()
-
-        base_symbol = self.pair.base
-        base_total = balance.currencies[base_symbol].total
-        base_free = balance.currencies[base_symbol].free
-        total_to_manage = self._get_max_asset_to_manage(base_total)
-        new_trade_size = round(total_to_manage - total_managed_asset, 4)
-
-        if base_free < new_trade_size:
-            new_trade_size = base_free
-
-        min_amount = self.limit_min_amount()
-        if new_trade_size < min_amount:
-            new_trade_size = 0
+        new_trade_size = self._calculate_new_trade_size(status)
 
         # (2) calculate the new stop loss
-        candles = self.read_candles(100, TimeFrame.day_1)
+        data_points = self.band_length + 10  # make sure we ask the enough data for the indicator
+        candles = self.read_candles(data_points)
 
         # Indicator: Standard Error Bands based on DEMA
         dema = ta.dema(close=candles.Close, length=self.band_length)
@@ -154,6 +160,7 @@ class TrailingStopLoss(GenericBot):
             else:
                 exit_order_id = detected_new_balance
 
+            # All Trades start/"born" here...
             new_trade = Trade(exchange_id=self.config.exchange_id, bot_id=self.config.id,
                               strategy_id=self.config.strategy_id, pair=self.config.pair,
                               size=new_trade_size,
