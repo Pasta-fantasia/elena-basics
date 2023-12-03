@@ -88,7 +88,7 @@ class TrailingStopLoss(GenericBot):
             self._logger.info(trade)
             total_managed_asset += trade.size
 
-        # is there any free balance to handle?
+        # (1) is there any free balance to handle?
         balance = self.get_balance()
 
         base_symbol = self.pair.base
@@ -104,7 +104,7 @@ class TrailingStopLoss(GenericBot):
         if new_trade_size < min_amount:
             new_trade_size = 0
 
-        # calculate the new stop loss
+        # (2) calculate the new stop loss
         candles = self.read_candles(100, TimeFrame.day_1)
 
         # Indicator: Standard Error Bands based on DEMA
@@ -114,38 +114,45 @@ class TrailingStopLoss(GenericBot):
 
         new_stop_loss = float(lower_band[-1:].iloc[0])  # get the last
         price = float(lower_band[-2:-1].iloc[0])
+
+        # get the last close as entry price for trade
+        # TODO: use ticker... in 1d time frame the entry is yesterday's close!
+        last_close = candles[-1:]['Close'].iloc[0]
+
+        new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
+
+        # TODO: price and new_stop_loss correction
         if price > new_stop_loss:
             price = new_stop_loss * 0.995  # TODO: Think how to do it
+            self._logger.error(f"price ({price}) should be never higher than new_stop_loss({new_stop_loss})")
 
-        last_close = candles[-1:]['Close'].iloc[0]  # get the last close as entry price for trade
-        new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
-        price_initial_sl_factor = new_stop_loss_initial_sl_factor * (1 - self.sl_limit_price_factor)
-
-        # TODO: new_stop_loss should be never higher than last_close
         if new_stop_loss > last_close:
             new_stop_loss = new_stop_loss_initial_sl_factor
+            self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({last_close})")
         # this is a fix for testing
 
+        # TODO: Verify Bot is doing it right and remove.
         # correct precisions for exchange
         new_stop_loss = self.price_to_precision(new_stop_loss)
+        new_stop_loss_initial_sl_factor = self.price_to_precision(new_stop_loss_initial_sl_factor)
         price = self.price_to_precision(price)
         new_trade_size = self.amount_to_precision(new_trade_size)
 
-        # New Trade logic
+        # (3) New Trade logic
+        detected_new_balance = 'detected new balance to manage'
 
         if new_trade_size > 0:
             if self.initial_sl_factor != 0:
                 # we have an initial_sl_factor so, we create an order every time we detect new balance
-                new_stop_loss_for_this_order = new_stop_loss_initial_sl_factor
-                price_for_this_order = price_initial_sl_factor
+                price_initial_sl_factor = new_stop_loss_initial_sl_factor * (1 - self.sl_limit_price_factor)
 
                 new_order = self.stop_loss_limit(amount=new_trade_size,
-                                                 stop_price=new_stop_loss_for_this_order,
-                                                 price=price_for_this_order)
+                                                 stop_price=new_stop_loss_initial_sl_factor,
+                                                 price=price_initial_sl_factor)
                 status.active_orders.append(new_order)
                 exit_order_id = new_order.id
             else:
-                exit_order_id = 'detected new balance to manage'
+                exit_order_id = detected_new_balance
 
             new_trade = Trade(exchange_id=self.config.exchange_id, bot_id=self.config.id,
                               strategy_id=self.config.strategy_id, pair=self.config.pair,
@@ -155,7 +162,7 @@ class TrailingStopLoss(GenericBot):
                               )
             status.active_trades.append(new_trade)
 
-        # OLD Trades logic
+        # (4) OLD Trades logic
 
         # trades are open every time a new balance is detected
         # loop over trades and create sl orders for that trades that are detected_new_balance
@@ -171,10 +178,9 @@ class TrailingStopLoss(GenericBot):
                     new_stop_loss_for_this_order = new_stop_loss
                     price_for_this_order = price
 
-                    new_order = self._manager.stop_loss_limit(self._exchange, bot_config=self._bot_config,
-                                                              amount=amount,
-                                                              stop_price=new_stop_loss_for_this_order,
-                                                              price=price_for_this_order)
+                    new_order = self.stop_loss_limit(amount=amount,
+                                                     stop_price=new_stop_loss_for_this_order,
+                                                     price=price_for_this_order)
                     status.active_orders.append(new_order)
                     trade.exit_order_id = new_order.id
 
