@@ -204,5 +204,8 @@ class TrailingStopLoss(GenericBot):
                 if trade.exit_order_id in canceled_orders:
                     trade.exit_order_id = new_order.id
                     trade.exit_price = new_stop_loss  # not real until the stop loss really executes.
+        else:
+            # TODO
+            ...
 
         return status
