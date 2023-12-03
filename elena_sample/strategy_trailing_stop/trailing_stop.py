@@ -120,9 +120,9 @@ class TrailingStopLoss(GenericBot):
         # this is a fix for testing
 
         # correct precisions for exchange
-        new_stop_loss = self._manager.price_to_precision(self._exchange, self._bot_config.pair, new_stop_loss)
-        price = self._manager.price_to_precision(self._exchange, self._bot_config.pair, price)
-        new_trade_size = self._manager.amount_to_precision(self._exchange, self._bot_config.pair, new_trade_size)
+        new_stop_loss = self.price_to_precision(new_stop_loss)
+        price = self.price_to_precision(price)
+        new_trade_size = self.amount_to_precision(new_trade_size)
 
         # update active orders
         for order in status.active_orders:
