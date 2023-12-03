@@ -1,37 +1,26 @@
-import importlib
-from datetime import datetime
-from typing import List, Optional, Tuple
+import pathlib
+from logging import Logger
 
-import pandas as pd
-from cron_converter import Cron
+from elena.domain.model.time_frame import TimeFrame
+from elena.domain.services.generic_bot import GenericBot
+from test.elena.domain.services.fake_exchange_manager import \
+    FakeExchangeManager
 
+from elena.adapters.bot_manager.local_bot_manager import LocalBotManager
+from elena.adapters.config.local_config_reader import LocalConfigReader
+from elena.adapters.logger.local_logger import LocalLogger
 from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus
-from elena.domain.model.exchange import Exchange, ExchangeType
-from elena.domain.model.order import (Order, OrderSide, OrderStatusType,
-                                      OrderType)
-from elena.domain.model.order_book import OrderBook
-from elena.domain.model.strategy_config import StrategyConfig
-from elena.domain.model.time_frame import TimeFrame
-from elena.domain.model.trading_pair import TradingPair
-from elena.domain.ports.bot import Bot
-from elena.domain.ports.bot_manager import BotManager
-from elena.domain.ports.exchange_manager import ExchangeManager
 from elena.domain.ports.logger import Logger
 from elena.domain.ports.strategy_manager import StrategyManager
+from elena.domain.services.elena import Elena
 
 
 import pandas_ta as ta
 
 
-class TrailingStopLoss(Bot):
-    # Trailing Stop Loss using BB
-
-    _manager: StrategyManager
-    _logger: Logger
-    _name: str
-    _bot_config: BotConfig
-    _exchange: Exchange
+class TrailingStopLoss(GenericBot):
+    # Trailing Stop Loss
 
     band_length: int
     band_mult: float
@@ -63,12 +52,8 @@ class TrailingStopLoss(Bot):
                 raise ValueError("Invalid asset_to_manage format, use: 25% or 20.33% for percentages "
                                  "or 25 or 3.33 for exact asset quantities.")
 
-    def init(self, manager: StrategyManager, logger: Logger, bot_config: BotConfig):
-        self._manager = manager
-        self._logger = logger
-        self._name = self.__class__.__name__
-        self._bot_config = bot_config
-        self._exchange = self._manager.get_exchange(self._bot_config.exchange_id)
+    def init(self, manager: StrategyManager, logger: Logger, bot_config: BotConfig):  # type: ignore
+        super().init(manager, logger, bot_config)
 
         try:
             self.band_length = bot_config.config['band_length']
@@ -76,14 +61,12 @@ class TrailingStopLoss(Bot):
             self.initial_sl_factor = bot_config.config['initial_sl_factor']
             self.sl_limit_price_factor = bot_config.config['sl_limit_price_factor']
             self.asset_to_manage = bot_config.config['asset_to_manage']
-            # TODO [Pere] Is there some magic trick to do it? We can keep BotConfig as is, but...
         except Exception as err:
-            logger.error('Error initializing Bot config')
-            logger.error(f"Unexpected {err=}, {type(err)=}")
-            # TODO [Pere] Should we raise it? _get_bot_instance
+            self._logger.error(f"Error initializing Bot config: {err}", error=err)
+
 
     def next(self, status: BotStatus) -> BotStatus:
-        self._logger.info('%s strategy: processing next cycle ...', self._name)
+        self._logger.info('%s strategy: processing next cycle ...', self.name)
 
         total_managed_asset = 0  # sum open orders amounts
         # for order in status.active_orders:
@@ -94,11 +77,12 @@ class TrailingStopLoss(Bot):
             total_managed_asset += trade.size
 
         # is there any free balance to handle?
-        balance = self._manager.get_balance(self._exchange)
-        base_symbol = self._bot_config.pair.base
-        total = balance.currencies[base_symbol].total
-        free = balance.currencies[base_symbol].free
-        total_to_manage = self._get_max_asset_to_manage(total)
+        balance = self.get_balance()
+
+        base_symbol = self.pair.base
+        base_total = balance.currencies[base_symbol].total
+        base_free = balance.currencies[base_symbol].free
+        total_to_manage = self._get_max_asset_to_manage(base_total)
         new_trade_size = round(total_to_manage - total_managed_asset, 4)
 
         # TODO: new_trade_size <- round to asset precision Read: https://docs.ccxt.com/#/README?id=currency-structure
@@ -106,21 +90,15 @@ class TrailingStopLoss(Bot):
         #       and check if it fits the minimum tradable
         #       we also need access other limits like market['info']['filters'] #['filterType']['MAX_NUM_ALGO_ORDERS']
 
-        if free < new_trade_size:
-            new_trade_size = free
+        if base_free < new_trade_size:
+            new_trade_size = base_free
 
-        min_amount = self._manager.limit_min_amount(self._exchange, self._bot_config.pair)
+        min_amount = self.limit_min_amount()
         if new_trade_size < min_amount:
             new_trade_size = 0
 
         # calculate the new stop loss
-        candles = self._manager.read_candles(self._exchange, self._bot_config.pair, TimeFrame.day_1)
-
-        # Indicator: Bollinger Bands (BBANDS)
-        # bbands = ta.bbands(close=candles.Close, length=self.band_length, std=self.band_mult)
-        # lower_band_bb = bbands[bbands.columns[0]]
-        # bbands_upper_band = bbands[bbands.columns[2]]
-        # new_stop_loss_bb = float(lower_band_bb[-1:].iloc[0])
+        candles = self.read_candles(100, TimeFrame.day_1)
 
         # Indicator: Standard Error Bands based on DEMA
         dema = ta.dema(close=candles.Close, length=self.band_length)
