@@ -5,6 +5,7 @@ from elena.domain.model.time_frame import TimeFrame
 from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.trade import Trade
 from elena.domain.model.bot_status import BotStatus
+from elena.domain.ports.exchange_manager import ExchangeManager
 
 from elena.domain.ports.logger import Logger
 from elena.domain.ports.strategy_manager import StrategyManager
@@ -52,12 +53,12 @@ class TrailingStopLoss(GenericBot):
                 raise ValueError("Invalid asset_to_manage format, use: 25% or 20.33% for percentages "
                                  "or 25 or 3.33 for exact asset quantities.")
 
-    def _calculate_new_trade_size(self, status: BotStatus) -> float:
+    def _calculate_new_trade_size(self) -> float:
         # do we have any new balance to handle?
 
         total_managed_asset = 0
         # sum open trades amounts
-        for trade in status.active_trades:
+        for trade in self.status.active_trades:
             self._logger.info(trade)
             total_managed_asset += trade.size
 
@@ -78,12 +79,12 @@ class TrailingStopLoss(GenericBot):
 
         return new_trade_size
 
-    def _cancel_active_orders_with_lower_stop_loss(self, status: BotStatus, new_stop_loss: float) -> float:
+    def _cancel_active_orders_with_lower_stop_loss(self, new_stop_loss: float) -> float:
         # Cancel any active stop order with a limit lower than the new one.
         # return the total amount of canceled orders
         total_amount_canceled_orders = 0
         canceled_orders = []
-        for order in status.active_orders:
+        for order in self.status.active_orders:
             if new_stop_loss > order.stop_price:
                 cancelled_order = self.cancel_order(order.id)
                 if cancelled_order:
@@ -93,8 +94,10 @@ class TrailingStopLoss(GenericBot):
                     self._logger.error(f"Error canceling order: {order.id}.")
         return total_amount_canceled_orders, canceled_orders
 
-    def init(self, manager: StrategyManager, logger: Logger, bot_config: BotConfig):  # type: ignore
-        super().init(manager, logger, bot_config)
+    def init(self, manager: StrategyManager, logger: Logger,
+             exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus):
+
+        super().init(manager, logger, exchange_manager, bot_config, bot_status)
 
         try:
             self.band_length = bot_config.config['band_length']
@@ -105,15 +108,15 @@ class TrailingStopLoss(GenericBot):
         except Exception as err:
             self._logger.error(f"Error initializing Bot config: {err}", error=err)
 
-    def next(self, status: BotStatus) -> BotStatus:
+    def next(self) -> BotStatus:
         self._logger.info('%s strategy: processing next cycle ...', self.name)
 
         # (1) is there any free balance to handle?
-        new_trade_size = self._calculate_new_trade_size(status)
+        new_trade_size = self._calculate_new_trade_size()
 
         # (2) calculate the new stop loss
         data_points = self.band_length + 10  # make sure we ask the enough data for the indicator
-        candles = self.read_candles(data_points)
+        candles = self.read_candles(page_size=data_points)
 
         # Indicator: Standard Error Bands based on DEMA
         dema = ta.dema(close=candles.Close, length=self.band_length)
@@ -124,7 +127,7 @@ class TrailingStopLoss(GenericBot):
         price = float(lower_band[-2:-1].iloc[0])
 
         # get the last close as entry price for trade
-        # TODO: use ticker... in 1d time frame the entry is yesterday's close!
+        # TODO: use ticker/order_book... in 1d time frame the entry is yesterday's close!
         last_close = candles[-1:]['Close'].iloc[0]
 
         new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
@@ -139,13 +142,6 @@ class TrailingStopLoss(GenericBot):
             self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({last_close})")
         # this is a fix for testing
 
-        # TODO: Verify Bot is doing it right and remove.
-        # correct precisions for exchange
-        new_stop_loss = self.price_to_precision(new_stop_loss)
-        new_stop_loss_initial_sl_factor = self.price_to_precision(new_stop_loss_initial_sl_factor)
-        price = self.price_to_precision(price)
-        new_trade_size = self.amount_to_precision(new_trade_size)
-
         # (3) New Trade logic
         detected_new_balance = 'detected new balance to manage'
 
@@ -154,23 +150,25 @@ class TrailingStopLoss(GenericBot):
                 # we have an initial_sl_factor so, we create an order every time we detect new balance
                 price_initial_sl_factor = new_stop_loss_initial_sl_factor * (1 - self.sl_limit_price_factor)
 
-                new_order = self.stop_loss_limit(amount=new_trade_size,
-                                                 stop_price=new_stop_loss_initial_sl_factor,
-                                                 price=price_initial_sl_factor)
+                new_order = self.stop_loss(amount=new_trade_size,
+                                           stop_price=new_stop_loss_initial_sl_factor,
+                                           price=price_initial_sl_factor)
                 # TODO: check if new_order...
-                status.active_orders.append(new_order)
+                # status.active_orders.append(new_order)
                 exit_order_id = new_order.id
             else:
                 exit_order_id = detected_new_balance
 
             # All Trades start/"born" here...
-            new_trade = Trade(exchange_id=self.config.exchange_id, bot_id=self.config.id,
-                              strategy_id=self.config.strategy_id, pair=self.config.pair,
+            new_trade = Trade(exchange_id=self.exchange.id,
+                              bot_id=self.id,
+                              strategy_id=self.bot_config.strategy_id,
+                              pair=self.pair,
                               size=new_trade_size,
                               entry_order_id='manual', entry_price=last_close,
                               exit_order_id=exit_order_id, exit_price=new_stop_loss,
                               )
-            status.active_trades.append(new_trade)
+            self.status.active_trades.append(new_trade)
 
         # (4) OLD Trades logic & cancelled orders
 
@@ -179,11 +177,11 @@ class TrailingStopLoss(GenericBot):
         #  and have a new_stop_loss over the entry_price
         # Create only one order and add total_amount_canceled_orders
 
-        total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(status, new_stop_loss)
+        total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(new_stop_loss)
         new_trades_on_limit_amount = 0
 
         # find trades that get the limit to start trailing stops
-        for trade in status.active_trades:
+        for trade in self.status.active_trades:
             if trade.exit_order_id == detected_new_balance:
                 if new_stop_loss > trade.entry_price * (1 + self.sl_limit_price_factor):
                     trade.exit_order_id = "new_grouped_order"
@@ -192,20 +190,20 @@ class TrailingStopLoss(GenericBot):
         # create a new stop order with the sum of all canceled orders + the trades that enter the limit
         grouped_amount_canceled_orders_and_new_trades = total_amount_canceled_orders + new_trades_on_limit_amount
 
-        new_order = self.stop_loss_limit(amount=grouped_amount_canceled_orders_and_new_trades,
-                                         stop_price=new_stop_loss,
-                                         price=price)
+        if grouped_amount_canceled_orders_and_new_trades >= self.limit_min_amount():
+            new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades,
+                                       stop_price=new_stop_loss, price=price)
 
-        if new_order:
-            canceled_orders.append("new_grouped_order")
+            if new_order:
+                canceled_orders.append("new_grouped_order")
 
-            # update trades with the new_order_id
-            for trade in status.active_trades:
-                if trade.exit_order_id in canceled_orders:
-                    trade.exit_order_id = new_order.id
-                    trade.exit_price = new_stop_loss  # not real until the stop loss really executes.
-        else:
-            # TODO
-            ...
+                # update trades with the new_order_id
+                for trade in self.status.active_trades:
+                    if trade.exit_order_id in canceled_orders:
+                        trade.exit_order_id = new_order.id
+                        trade.exit_price = new_stop_loss  # not real until the stop loss really executes.
+            else:
+                # TODO
+                ...
 
-        return status
+        return self.status
