@@ -119,26 +119,27 @@ class TrailingStopLoss(GenericBot):
         candles = self.read_candles(page_size=data_points)
 
         # Indicator: Standard Error Bands based on DEMA
-        dema = ta.dema(close=candles.Close, length=self.band_length)
-        stdev = ta.stdev(close=candles.Close, length=self.band_length)
-        lower_band = dema - (self.band_mult * stdev)
+        sl_dema = ta.dema(close=candles.Close, length=self.band_length)
+        sl_stdev = ta.stdev(close=candles.Close, length=self.band_length)
+        sl_lower_band = sl_dema - (self.band_mult * sl_stdev)
 
-        new_stop_loss = float(lower_band[-1:].iloc[0])  # get the last
-        stop_price = float(lower_band[-2:-1].iloc[0])
+        new_stop_loss = float(sl_lower_band[-1:].iloc[0])  # get the last
+
+        sl_price_dema = ta.dema(close=candles.Low, length=self.band_length)
+        sl_price_stdev = ta.stdev(close=candles.Low, length=self.band_length)
+        sl_price_lower_band = sl_price_dema - (self.band_mult * sl_price_stdev)
+
+        stop_price = float(sl_price_lower_band[-1:].iloc[0])
 
         # get the last close as entry price for trade
         # TODO: use ticker/order_book... in 1d time frame the entry is yesterday's close!
         last_close = candles[-1:]['Close'].iloc[0]
 
-        new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
-
         # TODO: price and new_stop_loss correction
         if stop_price > new_stop_loss:
-            stop_price = new_stop_loss * 0.995  # TODO: Think how to do it
             self._logger.error(f"price ({stop_price}) should be never higher than new_stop_loss({new_stop_loss})")
 
         if new_stop_loss > last_close:
-            new_stop_loss = new_stop_loss_initial_sl_factor
             self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({last_close})")
         # this is a fix for testing
 
@@ -147,6 +148,7 @@ class TrailingStopLoss(GenericBot):
 
         if new_trade_size > 0:
             if self.initial_sl_factor != 0:
+                new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
                 # we have an initial_sl_factor so, we create an order every time we detect new balance
                 price_initial_sl_factor = new_stop_loss_initial_sl_factor * (1 - self.sl_limit_price_factor)
 
@@ -183,7 +185,7 @@ class TrailingStopLoss(GenericBot):
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades:
             if trade.exit_order_id == detected_new_balance:
-                if new_stop_loss > trade.entry_price * (1 + self.sl_limit_price_factor):
+                if stop_price > trade.entry_price * (1 + self.sl_limit_price_factor):
                     trade.exit_order_id = "new_grouped_order"
                     new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
 
