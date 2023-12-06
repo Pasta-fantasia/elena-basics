@@ -124,7 +124,7 @@ class TrailingStopLoss(GenericBot):
         lower_band = dema - (self.band_mult * stdev)
 
         new_stop_loss = float(lower_band[-1:].iloc[0])  # get the last
-        price = float(lower_band[-2:-1].iloc[0])
+        stop_price = float(lower_band[-2:-1].iloc[0])
 
         # get the last close as entry price for trade
         # TODO: use ticker/order_book... in 1d time frame the entry is yesterday's close!
@@ -133,9 +133,9 @@ class TrailingStopLoss(GenericBot):
         new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
 
         # TODO: price and new_stop_loss correction
-        if price > new_stop_loss:
-            price = new_stop_loss * 0.995  # TODO: Think how to do it
-            self._logger.error(f"price ({price}) should be never higher than new_stop_loss({new_stop_loss})")
+        if stop_price > new_stop_loss:
+            stop_price = new_stop_loss * 0.995  # TODO: Think how to do it
+            self._logger.error(f"price ({stop_price}) should be never higher than new_stop_loss({new_stop_loss})")
 
         if new_stop_loss > last_close:
             new_stop_loss = new_stop_loss_initial_sl_factor
@@ -192,7 +192,7 @@ class TrailingStopLoss(GenericBot):
 
         if grouped_amount_canceled_orders_and_new_trades >= self.limit_min_amount():
             new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades,
-                                       stop_price=new_stop_loss, price=price)
+                                       stop_price=new_stop_loss, price=stop_price)
 
             if new_order:
                 canceled_orders.append("new_grouped_order")
