@@ -132,8 +132,7 @@ class TrailingStopLoss(GenericBot):
         stop_price = float(sl_price_lower_band[-1:].iloc[0])
 
         # get the last close as entry price for trade
-        # TODO: use ticker/order_book... in 1d time frame the entry is yesterday's close!
-        last_close = candles[-1:]['Close'].iloc[0]
+        last_close = self.get_estimated_last_close()
 
         # TODO: price and new_stop_loss correction
         if stop_price > new_stop_loss:
@@ -148,15 +147,14 @@ class TrailingStopLoss(GenericBot):
 
         if new_trade_size > 0:
             if self.initial_sl_factor != 0:
-                new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
                 # we have an initial_sl_factor so, we create an order every time we detect new balance
+                new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
                 price_initial_sl_factor = new_stop_loss_initial_sl_factor * (1 - self.sl_limit_price_factor)
 
                 new_order = self.stop_loss(amount=new_trade_size,
                                            stop_price=new_stop_loss_initial_sl_factor,
                                            price=price_initial_sl_factor)
-                # TODO: check if new_order...
-                # status.active_orders.append(new_order)
+                # TODO: check if new_order is not None
                 exit_order_id = new_order.id
             else:
                 exit_order_id = detected_new_balance
