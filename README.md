@@ -19,17 +19,22 @@ Assuming you have a dedicated user for elena:
 cd $HOME
 python3 -m venv venv
 source ~/venv/bin/activate
+
+pip install --upgrade pip
+pip install -U setuptools wheel
+
 echo "source ~/venv/bin/activate" >> .bashrc
+
 ```
 
 - clone elena and switch to the dev branch
 ```
 cd $HOME
-git clone git@github.com:Pasta-fantasia/elena.git
+git clone https://github.com/Pasta-fantasia/elena.git
 cd $HOME/elena/
 git fetch origin
 git branch -a
-git switch feature/TODOs
+git switch dev
 git pull
 ```
 
@@ -46,7 +51,7 @@ Edit L_working/elena_config.yaml
 - clone and install the sample strategy 
 ```
 cd $HOME
-git clone git@github.com:Pasta-fantasia/elena-sample.git
+git clone https://github.com/Pasta-fantasia/elena-basics.git
 cd elena-sample/
 pip install -e .
 ```
