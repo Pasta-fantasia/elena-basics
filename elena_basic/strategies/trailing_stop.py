@@ -164,15 +164,8 @@ class TrailingStopLoss(GenericBot):
                 exit_order_id = detected_new_balance
 
             # All Trades start/"born" here...
-            new_trade = Trade(exchange_id=self.exchange.id,
-                              bot_id=self.id,
-                              strategy_id=self.bot_config.strategy_id,
-                              pair=self.pair,
-                              size=new_trade_size,
-                              entry_order_id='manual', entry_price=last_close,
-                              exit_order_id=exit_order_id, exit_price=new_stop_loss,
-                              )
-            self.status.active_trades.append(new_trade)
+            self.new_trade_manual(size=new_trade_size, entry_price=new_trade_size,
+                                  exit_order_id=exit_order_id, exit_price=new_stop_loss)
 
         # (4) OLD Trades logic & cancelled orders
 
