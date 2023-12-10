@@ -138,6 +138,10 @@ class TrailingStopLoss(GenericBot):
         if stop_price > new_stop_loss:
             self._logger.error(f"price ({stop_price}) should be never higher than new_stop_loss({new_stop_loss})")
 
+        if stop_price < new_stop_loss * 0.8:
+            self._logger.error(f"price ({stop_price}) is too far from new_stop_loss({new_stop_loss}) it may happend on test envs.")
+            stop_price = new_stop_loss * 0.9
+
         if new_stop_loss > last_close:
             self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({last_close})")
         # this is a fix for testing
