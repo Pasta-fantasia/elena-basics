@@ -149,6 +149,8 @@ class TrailingStopLoss(GenericBot):
         # (3) New Trade logic
         detected_new_balance = 'detected new balance to manage'
 
+        exit_order_id = detected_new_balance
+
         if new_trade_size > 0:
             if self.initial_sl_factor != 0:
                 # we have an initial_sl_factor so, we create an order every time we detect new balance
@@ -159,9 +161,11 @@ class TrailingStopLoss(GenericBot):
                                            stop_price=new_stop_loss_initial_sl_factor,
                                            price=price_initial_sl_factor)
                 # TODO: check if new_order is not None
-                exit_order_id = new_order.id
-            else:
-                exit_order_id = detected_new_balance
+                if new_order:
+                    exit_order_id = new_order.id
+                else:
+                    # TODO
+                    self._logger.error("Can't create stop loss new_trade with initial_sl_factor")
 
             # All Trades start/"born" here...
             self.new_trade_manual(size=new_trade_size, entry_price=new_trade_size,
@@ -201,6 +205,6 @@ class TrailingStopLoss(GenericBot):
                         trade.exit_price = new_stop_loss  # not real until the stop loss really executes.
             else:
                 # TODO
-                ...
+                self._logger.error("Can't create stop loss grouped_amount_canceled_orders_and_new_trades ")
 
         return self.status
