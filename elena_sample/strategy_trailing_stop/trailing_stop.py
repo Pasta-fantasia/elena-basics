@@ -114,7 +114,7 @@ class TrailingStopLoss(GenericBot):
         # (1) is there any free balance to handle?
         new_trade_size = self._calculate_new_trade_size()
 
-        # (2) calculate the new stop loss
+        # (2) calculate the new stop loss / stop_price / last_close
         data_points = self.band_length + 10  # make sure we ask the enough data for the indicator
         candles = self.read_candles(page_size=data_points)
 
@@ -134,7 +134,7 @@ class TrailingStopLoss(GenericBot):
         # get the last close as entry price for trade
         last_close = self.get_estimated_last_close()
 
-        # TODO: price and new_stop_loss correction
+        # TODO: price and new_stop_loss error conditions
         if stop_price > new_stop_loss:
             self._logger.error(f"price ({stop_price}) should be never higher than new_stop_loss({new_stop_loss})")
 
@@ -174,7 +174,7 @@ class TrailingStopLoss(GenericBot):
 
         # trades are open every time a new balance is detected
         # loop over trades and create sl orders for that trades that are detected_new_balance
-        #  and have a new_stop_loss over the entry_price
+        #  and have a new_stop_loss/stop_price over the entry_price
         # Create only one order and add total_amount_canceled_orders
 
         total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(new_stop_loss)
