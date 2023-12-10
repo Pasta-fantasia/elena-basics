@@ -22,6 +22,24 @@ Strategies:
           sl_limit_price_factor: 0.003 # % of price limit on the sl limit order. it's used for minimal benefit too.
           asset_to_manage: 100%
 
+  - id: DCA_Strict
+    name: DCA_Strict
+    enabled: true
+    strategy_class: elena_basic.strategies.dca_strict.DCA_Strict
+
+    bots:
+      - id: DCA_BTC_USDT_1
+        name: DCA Strict BTC/USDT
+        enabled: true
+        pair: BTC/USDT
+        exchange: binance
+        time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
+        cron_expression: "*/5 * * * *" # At every 5th minute
+        tags:
+          - DCA
+          - ranging
+        config:
+          budget: 100.0
 
 Exchanges:
   - id: binance
