@@ -40,6 +40,7 @@ class DCA_Strict(GenericBot):
 
         min_amount = self.limit_min_amount()
         if not min_amount:
+            # TODO convert to return None and log.error
             raise Exception("Cannot get min_amount")
 
         estimated_close_price = self.get_estimated_last_close()
