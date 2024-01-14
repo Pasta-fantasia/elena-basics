@@ -168,3 +168,4 @@ cython_debug/
 /local_data/bots/
 /local_data/logs/
 /.idea/
+/local_data/secrets.yaml

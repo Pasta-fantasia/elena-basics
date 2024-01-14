@@ -1,21 +1,16 @@
 import pathlib
-from logging import Logger
+import time
+from os import path
 
-from elena.domain.model.time_frame import TimeFrame
 from elena.domain.model.bot_config import BotConfig
-from elena.domain.model.trade import Trade
-from elena.domain.model.bot_status import BotStatus
+from elena.domain.model.bot_status import BotStatus, BotBudget
 from elena.domain.ports.exchange_manager import ExchangeManager
-
 from elena.domain.ports.logger import Logger
+from elena.domain.ports.metrics_manager import MetricsManager
+from elena.domain.ports.notifications_manager import NotificationsManager
 from elena.domain.ports.strategy_manager import StrategyManager
-
-from elena.domain.services.elena import Elena
+from elena.domain.services.elena import get_elena_instance
 from elena.domain.services.generic_bot import GenericBot
-
-from elena.adapters.bot_manager.local_bot_manager import LocalBotManager
-from elena.adapters.config.local_config_reader import LocalConfigReader
-from elena.adapters.logger.local_logger import LocalLogger
 
 import pandas_ta as ta
 

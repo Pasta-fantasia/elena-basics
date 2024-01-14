@@ -12,6 +12,8 @@ Strategies:
         exchange: binance
         time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "*/5 * * * *" # At every 5th minute
+        budget_limit: 0.0 # don't control budget
+        pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
           - TrailingStopLoss
           - bear
@@ -35,42 +37,18 @@ Strategies:
         exchange: binance
         time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "*/5 * * * *" # At every 5th minute
+        budget_limit: 0.0 # don't control budget
+        pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
           - DCA
           - ranging
         config:
           budget: 100.0
 
-Exchanges:
-  - id: binance
-    enabled: true
-    sandbox_mode: true
-    api_key: ***REMOVED***
-    password: not_in_use
-    secret: ***REMOVED***
-  - id: bitget
-    enabled: true
-    sandbox_mode: true
-    api_key: ***REMOVED***
-    password: ***REMOVED***
-    secret: ***REMOVED***
-  - id: kucoin
-    enabled: true
-    sandbox_mode: false
-    api_key: ***REMOVED***
-    password: ***REMOVED***
-    secret: ***REMOVED***
-
 Tags:
   - id: bear
     enabled: true
   - id: bull
-    enabled: false
+    enabled: true
   - id: ranging
     enabled: true
-  - id: TrailingStopLoss
-    enabled: true
-
-CctxExchangeManager:
-  fetch_ohlcv_limit: 100
-  fetch_ohlcv_limit_retry_every_milliseconds: 1000
