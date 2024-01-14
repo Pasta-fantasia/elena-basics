@@ -89,10 +89,8 @@ class TrailingStopLoss(GenericBot):
                     self._logger.error(f"Error canceling order: {order.id}.")
         return total_amount_canceled_orders, canceled_orders
 
-    def init(self, manager: StrategyManager, logger: Logger,
-             exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus):
-
-        super().init(manager, logger, exchange_manager, bot_config, bot_status)
+    def init(self, manager: StrategyManager, logger: Logger, metrics_manager: MetricsManager, notifications_manager: NotificationsManager, exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus, ):  # type: ignore
+        super().init(manager, logger, metrics_manager, notifications_manager, exchange_manager, bot_config, bot_status,)
 
         try:
             self.band_length = bot_config.config['band_length']
