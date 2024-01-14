@@ -10,8 +10,8 @@ Strategies:
         enabled: true
         pair: BTC/USDT
         exchange: binance
-        time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
-        cron_expression: "*/5 * * * *" # At every 5th minute
+        time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
+        cron_expression: "* * * * *" # At every minute
         budget_limit: 0.0 # don't control budget
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
@@ -20,13 +20,12 @@ Strategies:
         config:
           band_length: 13
           band_mult: 1
-          initial_sl_factor: 0.8
-          sl_limit_price_factor: 0.003 # % of price limit on the sl limit order. it's used for minimal benefit too.
+          minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
           asset_to_manage: 100%
 
   - id: DCA_Strict
     name: DCA_Strict
-    enabled: true
+    enabled: false
     strategy_class: elena_basic.strategies.dca_strict.DCA_Strict
 
     bots:
