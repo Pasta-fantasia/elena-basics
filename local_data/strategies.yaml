@@ -25,7 +25,7 @@ Strategies:
 
   - id: DCA_Strict
     name: DCA_Strict
-    enabled: false
+    enabled: true
     strategy_class: elena_basic.strategies.dca_strict.DCA_Strict
 
     bots:
@@ -36,13 +36,13 @@ Strategies:
         exchange: binance
         time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "*/5 * * * *" # At every 5th minute
-        budget_limit: 0.0 # don't control budget
+        budget_limit: 300.0 # Buy up to 300 UDST
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
           - DCA
           - ranging
         config:
-          budget: 100.0
+          spend_on_order: 100.0 # spend 100 USDT on every cycle
 
 Tags:
   - id: bear
