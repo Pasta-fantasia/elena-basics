@@ -26,6 +26,10 @@ class TrailingStopLoss(GenericBot):
 
     stop_loose_changes: int
 
+    _logger: Logger
+    _metrics_manager: MetricsManager
+    _notifications_manager: NotificationsManager
+
     @staticmethod
     def _percentage_to_float(percentage):
         percentage = percentage[:-1]  # Remove the percentage symbol
@@ -91,6 +95,9 @@ class TrailingStopLoss(GenericBot):
 
     def init(self, manager: StrategyManager, logger: Logger, metrics_manager: MetricsManager, notifications_manager: NotificationsManager, exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus, ):  # type: ignore
         super().init(manager, logger, metrics_manager, notifications_manager, exchange_manager, bot_config, bot_status,)
+        self._logger = logger
+        self._metrics_manager = metrics_manager
+        self._notifications_manager = notifications_manager
 
         try:
             self.band_length = bot_config.config['band_length']
