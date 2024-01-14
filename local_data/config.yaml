@@ -11,7 +11,7 @@ NotificationsManager:
 BotManager:
   class: elena.adapters.bot_manager.local_bot_manager.LocalBotManager
 ExchangeManager:
-  class: test.elena.domain.services.fake_exchange_manager.FakeExchangeManager
+  class: "elena.adapters.exchange_manager.cctx_exchange_manager.CctxExchangeManager"
   fetch_ohlcv_limit: 100
   fetch_ohlcv_limit_retry_every_milliseconds: 1000
 StorageManager:
