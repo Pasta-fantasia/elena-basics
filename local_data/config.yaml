@@ -1,6 +1,6 @@
 Logger:
   class: elena.adapters.logger.local_logger.LocalLogger
-  level: DEBUG
+  level: INFO
   path: logs  # relative path under home directory
   max_bytes: 1000000 # 1 MB max log files size
   backup_count: 1  # Number of log backup files

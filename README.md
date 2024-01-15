@@ -82,6 +82,8 @@ pip install -e ../elena
 pip install -r requirements.txt
 ```
 
+Run or debug entrypoint.py (only ment for testing in local)
+
 # Interact with the exchange while testing
 
 On local_data directory you'll find ccxt_direct.py with some code that may help you to interact with the exchange manually.

@@ -6,7 +6,7 @@ from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus, BotBudget
 from elena.domain.ports.exchange_manager import ExchangeManager
 from elena.domain.ports.logger import Logger
-from elena.domain.ports.metrics_manager import MetricsManager
+from elena.domain.ports.metrics_manager import Metric, MetricsManager
 from elena.domain.ports.notifications_manager import NotificationsManager
 from elena.domain.ports.strategy_manager import StrategyManager
 from elena.domain.services.elena import get_elena_instance
@@ -20,11 +20,13 @@ class TrailingStopLoss(GenericBot):
 
     band_length: int
     band_mult: float
-    initial_sl_factor: float
-    sl_limit_price_factor: float
+    minimal_benefit_to_start_trailing: float
+
     asset_to_manage: str
 
-    stop_loose_changes: int
+    _logger: Logger
+    _metrics_manager: MetricsManager
+    _notifications_manager: NotificationsManager
 
     @staticmethod
     def _percentage_to_float(percentage):
@@ -91,12 +93,14 @@ class TrailingStopLoss(GenericBot):
 
     def init(self, manager: StrategyManager, logger: Logger, metrics_manager: MetricsManager, notifications_manager: NotificationsManager, exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus, ):  # type: ignore
         super().init(manager, logger, metrics_manager, notifications_manager, exchange_manager, bot_config, bot_status,)
+        self._logger = logger
+        self._metrics_manager = metrics_manager
+        self._notifications_manager = notifications_manager
 
         try:
             self.band_length = bot_config.config['band_length']
             self.band_mult = bot_config.config['band_mult']
-            self.initial_sl_factor = bot_config.config['initial_sl_factor']
-            self.sl_limit_price_factor = bot_config.config['sl_limit_price_factor']
+            self.minimal_benefit_to_start_trailing = bot_config.config['minimal_benefit_to_start_trailing']
             self.asset_to_manage = bot_config.config['asset_to_manage']
         except Exception as err:
             self._logger.error(f"Error initializing Bot config: {err}", error=err)
@@ -112,17 +116,21 @@ class TrailingStopLoss(GenericBot):
         candles = self.read_candles(page_size=data_points)
 
         # Indicator: Standard Error Bands based on DEMA
+        #   new_stop_loss
         sl_dema = ta.dema(close=candles.Close, length=self.band_length)
         sl_stdev = ta.stdev(close=candles.Close, length=self.band_length)
         sl_lower_band = sl_dema - (self.band_mult * sl_stdev)
 
         new_stop_loss = float(sl_lower_band[-1:].iloc[0])  # get the last
+        # self._metrics_manager.gauge(Metric.INDICATOR, self.id, new_stop_loss)
 
+        #   stop_price
         sl_price_dema = ta.dema(close=candles.Low, length=self.band_length)
         sl_price_stdev = ta.stdev(close=candles.Low, length=self.band_length)
         sl_price_lower_band = sl_price_dema - (self.band_mult * sl_price_stdev)
 
         stop_price = float(sl_price_lower_band[-1:].iloc[0])
+        # self._metrics_manager.gauge(Metric.INDICATOR, self.id, stop_price)
 
         # get the last close as entry price for trade
         last_close = self.get_estimated_last_close()
@@ -145,24 +153,8 @@ class TrailingStopLoss(GenericBot):
         exit_order_id = detected_new_balance
 
         if new_trade_size > 0:
-            if self.initial_sl_factor != 0:
-                # we have an initial_sl_factor so, we create an order every time we detect new balance
-                new_stop_loss_initial_sl_factor = last_close * self.initial_sl_factor
-                price_initial_sl_factor = new_stop_loss_initial_sl_factor * (1 - self.sl_limit_price_factor)
-
-                new_order = self.stop_loss(amount=new_trade_size,
-                                           stop_price=new_stop_loss_initial_sl_factor,
-                                           price=price_initial_sl_factor)
-                # TODO: check if new_order is not None
-                if new_order:
-                    exit_order_id = new_order.id
-                else:
-                    # TODO
-                    self._logger.error("Can't create stop loss new_trade with initial_sl_factor")
-
             # All Trades start/"born" here...
-            self.new_trade_manual(size=new_trade_size, entry_price=new_trade_size,
-                                  exit_order_id=exit_order_id, exit_price=new_stop_loss)
+            self.new_trade_manual(size=new_trade_size, entry_price=last_close, exit_order_id=exit_order_id, exit_price=new_stop_loss)
 
         # (4) OLD Trades logic & cancelled orders
 
@@ -177,7 +169,7 @@ class TrailingStopLoss(GenericBot):
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades:
             if trade.exit_order_id == detected_new_balance:
-                if stop_price > trade.entry_price * (1 + self.sl_limit_price_factor):
+                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing/100)):
                     trade.exit_order_id = "new_grouped_order"
                     new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
 
@@ -185,8 +177,7 @@ class TrailingStopLoss(GenericBot):
         grouped_amount_canceled_orders_and_new_trades = total_amount_canceled_orders + new_trades_on_limit_amount
 
         if grouped_amount_canceled_orders_and_new_trades >= self.limit_min_amount():
-            new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades,
-                                       stop_price=new_stop_loss, price=stop_price)
+            new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades, stop_price=new_stop_loss, price=stop_price)
 
             if new_order:
                 canceled_orders.append("new_grouped_order")
