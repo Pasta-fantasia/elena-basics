@@ -145,6 +145,8 @@ class TrailingStopLoss(GenericBot):
 
         if new_stop_loss > last_close:
             self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({last_close})")
+            new_stop_loss = 0
+            stop_price = 0
         # this is a fix for testing
 
         # (3) New Trade logic
