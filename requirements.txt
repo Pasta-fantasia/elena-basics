@@ -1,4 +1,4 @@
-elena @ git+https://github.com/Pasta-fantasia/elena.git@main#egg=elena
+# elena @ git+https://github.com/Pasta-fantasia/elena.git@main#egg=elena
 pandas-ta
 #backtesting
 #multiprocess
