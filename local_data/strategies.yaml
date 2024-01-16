@@ -55,7 +55,7 @@ Strategies:
         exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "* * * * *" # At every 5th minute
-        budget_limit: 1600.0 # Buy up to 600 UDST
+        budget_limit: 2000.0 # Buy up to 600 UDST
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
           - DCA
