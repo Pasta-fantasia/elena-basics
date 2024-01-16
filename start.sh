@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 local_dir=` pwd `'/local_data'
-APP_HOME='/home/elena_sample'
+APP_HOME='/home/elena_basic'
 
 echo Using:
 echo    ${local_dir} as working directory
