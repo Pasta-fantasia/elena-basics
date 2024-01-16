@@ -1,6 +1,6 @@
 FROM python:latest
 
-ENV MODULE_NAME=elena_sample
+ENV MODULE_NAME=elena_basic
 ENV USER=${MODULE_NAME}
 ENV CLI=${MODULE_NAME}
 ENV USER_HOME=/home/${USER}
