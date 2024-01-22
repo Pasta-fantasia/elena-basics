@@ -87,7 +87,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
 
         # BUY LOGIC
         error_on_buy = False
-        if angle>0:
+        if angle > 0:
             quote_symbol = self.pair.quote
             quote_free = balance.currencies[quote_symbol].free
 

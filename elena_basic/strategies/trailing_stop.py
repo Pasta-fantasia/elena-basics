@@ -6,7 +6,7 @@ from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus, BotBudget
 from elena.domain.ports.exchange_manager import ExchangeManager
 from elena.domain.ports.logger import Logger
-from elena.domain.ports.metrics_manager import Metric, MetricsManager
+from elena.domain.ports.metrics_manager import MetricsManager
 from elena.domain.ports.notifications_manager import NotificationsManager
 from elena.domain.ports.strategy_manager import StrategyManager
 from elena.domain.services.elena import get_elena_instance
@@ -62,8 +62,12 @@ class TrailingStopLoss(GenericBot):
         balance = self.get_balance()
 
         base_symbol = self.pair.base
-        base_total = balance.currencies[base_symbol].total
-        base_free = balance.currencies[base_symbol].free
+        if base_symbol in balance.currencies:
+            base_total = balance.currencies[base_symbol].total
+            base_free = balance.currencies[base_symbol].free
+        else:
+            base_total = 0.0
+            base_free = 0.0
         total_to_manage = self._get_max_asset_to_manage(base_total)
         new_trade_size = total_to_manage - total_managed_asset
 
