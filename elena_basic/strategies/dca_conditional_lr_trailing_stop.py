@@ -62,9 +62,6 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
         self._logger.info('%s strategy: processing next cycle ...', self.name)
 
         min_amount = self.limit_min_amount()
-        if not min_amount:
-            self._logger.error("Cannot get min_amount")
-            return
 
         min_cost = self.limit_min_cost()
         if not min_cost:
