@@ -48,7 +48,9 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
                 "fake_entry_cost": [0.0]
             }
         )
-        fake_spent_by_frequency = now.groupby(pd.Grouper(key='entry_time', freq="H")).agg({'fake_entry_cost': 'sum'})
+        if spent_times_shift:
+            now['entry_time'] = now['entry_time'] + pd.Timedelta(spent_times_shift)
+        fake_spent_by_frequency = now.groupby(pd.Grouper(key='entry_time', freq=frequency)).agg({'fake_entry_cost': 'sum'})
         merged = real_spent_by_frequency.merge(fake_spent_by_frequency, on='entry_time', how='outer')
 
         spent = merged["entry_cost"][-1:].iloc[0]
@@ -80,6 +82,9 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
             spent = self._spent_in_current_freq(frequency, spent_times_shift)
             weekly_budget_left = weekly_budget - spent
             budget_left = min(budget_left, weekly_budget_left)
+
+        if budget_left < 0.0:
+            budget_left = 0.0
 
         return budget_left
 
