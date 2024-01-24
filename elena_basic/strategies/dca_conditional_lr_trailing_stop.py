@@ -9,9 +9,10 @@ from elena.domain.ports.logger import Logger
 from elena.domain.ports.metrics_manager import MetricsManager
 from elena.domain.ports.notifications_manager import NotificationsManager
 from elena.domain.ports.strategy_manager import StrategyManager
-from elena.domain.services.elena import get_elena_instance
 from elena.domain.services.generic_bot import GenericBot
 
+import numpy as np
+import pandas as pd
 import pandas_ta as ta
 
 
@@ -23,10 +24,65 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
     band_length: float
     band_mult: float
     minimal_benefit_to_start_trailing: float
+    min_price_to_start_trailing: float
 
     _logger: Logger
     _metrics_manager: MetricsManager
     _notifications_manager: NotificationsManager
+
+    def _spent_by_frequency(self, frequency="D", shift=None):
+        df = pd.DataFrame([model.dict() for model in bot.active_trades])
+        df['entry_time'] = pd.to_datetime(df['entry_time'], unit='ms')  # ,utc=True)
+        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Grouper.html
+        # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        if shift:
+            df['entry_time'] = df['entry_time'] + pd.Timedelta(shift)
+        return df.groupby(pd.Grouper(key='entry_time', freq=frequency)).agg({'entry_cost': 'sum'})
+
+    def _spent_in_current_freq(self, frequency="D", spent_times_shift=None) -> float:
+        real_spent_by_frequency = self._spent_by_frequency(frequency, spent_times_shift)
+
+        now = pd.DataFrame(
+            {
+                "entry_time": [pd.Timestamp.now()],
+                "fake_entry_cost": [0.0]
+            }
+        )
+        fake_spent_by_frequency = now.groupby(pd.Grouper(key='entry_time', freq="H")).agg({'fake_entry_cost': 'sum'})
+        merged = real_spent_by_frequency.merge(fake_spent_by_frequency, on='entry_time', how='outer')
+
+        spent = merged["entry_cost"][-1:].iloc[0]
+
+        if spent == np.nan:
+            spent = 0.0
+        else:
+            spent = float(spent)
+
+        return spent
+
+    def budget_left_in_freq(self) -> float:
+        if 'spent_times_shift' in self.bot_config.config
+            spent_times_shift = self.bot_config.config['spent_times_shift']
+        else:
+            spent_times_shift = None
+
+        budget_left = self.status.budget.free
+        if 'daily_budget' in self.bot_config.config:
+            frequency = "D"
+            daily_budget = self.bot_config.config['daily_budget']
+            spent = self._spent_in_current_freq(frequency, spent_times_shift)
+            daily_budget_left = daily_budget - spent
+            budget_left = min(budget_left, daily_budget_left)
+
+        if 'weekly_budget' in self.bot_config.config:
+            frequency = "W"
+            weekly_budget = self.bot_config.config['weekly_budget']
+            spent = self._spent_in_current_freq(frequency, spent_times_shift)
+            weekly_budget_left = weekly_budget - spent
+            budget_left = min(budget_left, weekly_budget_left)
+
+        return budget_left
+
 
     def _cancel_active_orders_with_lower_stop_loss(self, new_stop_loss: float) -> float:
         # Cancel any active stop order with a limit lower than the new one.
@@ -55,6 +111,10 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
             self.band_length = bot_config.config['band_length']
             self.band_mult = bot_config.config['band_mult']
             self.minimal_benefit_to_start_trailing = bot_config.config['minimal_benefit_to_start_trailing']
+            if 'min_price_to_start_trailing' in self.bot_config.config:
+                self.min_price_to_start_trailing = bot_config.config['min_price_to_start_trailing']
+            else:
+                self.min_price_to_start_trailing = 0.0
         except Exception as err:
             self._logger.error(f"Error initializing Bot config: {err}", error=err)
 
@@ -91,7 +151,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
             quote_symbol = self.pair.quote
             quote_free = balance.currencies[quote_symbol].free
 
-            amount_to_spend = min(self.status.budget.free, self.spend_on_order, quote_free)
+            amount_to_spend = min(self.budget_left_in_freq(), self.spend_on_order, quote_free)
             amount_to_buy = amount_to_spend / estimated_close_price
             amount_to_buy = self.amount_to_precision(amount_to_buy)
 
@@ -145,7 +205,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades:
             if trade.exit_order_id == '0': # TODO exit_order_id
-                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)):
+                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)) and stop_price > self.min_price_to_start_trailing::
                     trade.exit_order_id = "new_grouped_order"
                     new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
 

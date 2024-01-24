@@ -21,6 +21,7 @@ class TrailingStopLoss(GenericBot):
     band_length: int
     band_mult: float
     minimal_benefit_to_start_trailing: float
+    min_price_to_start_trailing: float
 
     asset_to_manage: str
 
@@ -106,6 +107,11 @@ class TrailingStopLoss(GenericBot):
             self.band_mult = bot_config.config['band_mult']
             self.minimal_benefit_to_start_trailing = bot_config.config['minimal_benefit_to_start_trailing']
             self.asset_to_manage = bot_config.config['asset_to_manage']
+            if 'min_price_to_start_trailing' in self.bot_config.config:
+                self.min_price_to_start_trailing = bot_config.config['min_price_to_start_trailing']
+            else:
+                self.min_price_to_start_trailing = 0.0
+
         except Exception as err:
             self._logger.error(f"Error initializing Bot config: {err}", error=err)
 
@@ -175,7 +181,7 @@ class TrailingStopLoss(GenericBot):
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades:
             if trade.exit_order_id == detected_new_balance:
-                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing/100)):
+                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing/100)) and stop_price > self.min_price_to_start_trailing:
                     trade.exit_order_id = "new_grouped_order"
                     new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
 
