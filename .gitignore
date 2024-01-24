@@ -169,3 +169,4 @@ cython_debug/
 /local_data/logs/
 /.idea/
 /local_data/secrets.yaml
+/local_data/storage/
