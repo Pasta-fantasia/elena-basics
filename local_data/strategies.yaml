@@ -52,7 +52,7 @@ Strategies:
         name: DCA Conditional LR with Trailing Stop Loss BTC/USDT
         enabled: true
         pair: BTC/USDT
-        exchange: bybit
+        exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "* * * * *" # At every 5th minute
         budget_limit: 2000.0 # Buy up to 600 UDST
@@ -67,6 +67,7 @@ Strategies:
           lr_buy_longitude: 5 # data points for linear regression
           band_length: 7
           band_mult: 1
+          min_price_to_start_trailing: 0
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
 
   - id: TrailingStopLoss
@@ -75,11 +76,11 @@ Strategies:
     strategy_class: elena_basic.strategies.trailing_stop.TrailingStopLoss
 
     bots:
-      - id: HNT_USDT_1
+      - id: ETH_USDT_1
         name: TrailingStopLoss BTC/USDT
         enabled: true
-        pair: HNT/USDT
-        exchange: bybit
+        pair: ETH/USDT
+        exchange: binance
         time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "0 * * * *" # At every minute
         budget_limit: 0.0 # don't control budget
@@ -90,7 +91,7 @@ Strategies:
         config:
           band_length: 34
           band_mult: 2
-          min_price_to_start_trailing: 2
+          min_price_to_start_trailing: 1900
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
           asset_to_manage: 100%
 

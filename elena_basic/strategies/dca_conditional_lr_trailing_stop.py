@@ -31,8 +31,8 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
     _notifications_manager: NotificationsManager
 
     def _spent_by_frequency(self, frequency="D", shift=None):
-        df = pd.DataFrame([model.dict() for model in bot.active_trades])
-        df['entry_time'] = pd.to_datetime(df['entry_time'], unit='ms')  # ,utc=True)
+        df = pd.DataFrame([model.dict() for model in self.status.active_trades])
+        df['entry_time'] = pd.to_datetime(df['entry_time'], unit='ms', utc=True)
         # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Grouper.html
         # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
         if shift:
@@ -44,7 +44,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
 
         now = pd.DataFrame(
             {
-                "entry_time": [pd.Timestamp.now()],
+                "entry_time": [pd.Timestamp.now(tz='UTC')],
                 "fake_entry_cost": [0.0]
             }
         )
@@ -53,7 +53,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
 
         spent = merged["entry_cost"][-1:].iloc[0]
 
-        if spent == np.nan:
+        if np.isnan(spent):
             spent = 0.0
         else:
             spent = float(spent)
@@ -61,7 +61,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
         return spent
 
     def budget_left_in_freq(self) -> float:
-        if 'spent_times_shift' in self.bot_config.config
+        if 'spent_times_shift' in self.bot_config.config:
             spent_times_shift = self.bot_config.config['spent_times_shift']
         else:
             spent_times_shift = None
@@ -205,7 +205,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades:
             if trade.exit_order_id == '0': # TODO exit_order_id
-                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)) and stop_price > self.min_price_to_start_trailing::
+                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)) and stop_price > self.min_price_to_start_trailing:
                     trade.exit_order_id = "new_grouped_order"
                     new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
 
