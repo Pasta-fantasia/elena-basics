@@ -168,7 +168,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
             else:
                 msg = f"Not enough balance to buy min_amount/min_cost. {self.pair.base}, quote_free={quote_free}, min_amount={min_amount}, min_cost={min_cost}, amount_to_spend={amount_to_spend}, free-budget={self.status.budget.free}, estimated_close_price={estimated_close_price}"
                 self._logger.warning(msg)
-                self._notifications_manager.medium(msg)
+                # self._notifications_manager.medium(msg)
                 error_on_buy = True
 
 
