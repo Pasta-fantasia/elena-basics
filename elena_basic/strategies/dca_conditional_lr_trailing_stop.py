@@ -32,6 +32,14 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
 
     def _spent_by_frequency(self, frequency="D", shift=None):
         df = pd.DataFrame([model.dict() for model in self.status.active_trades])
+
+        if df.empty():
+            df = pd.DataFrame(
+                {
+                    "entry_time": [pd.Timestamp.now(tz='UTC')],
+                    "entry_cost": [0.0]
+                }
+            )
         df['entry_time'] = pd.to_datetime(df['entry_time'], unit='ms', utc=True)
         # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Grouper.html
         # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
