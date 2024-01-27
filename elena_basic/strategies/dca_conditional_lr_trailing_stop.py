@@ -31,21 +31,24 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
     _notifications_manager: NotificationsManager
 
     def _spent_by_frequency(self, frequency="D", shift=None):
-        df = pd.DataFrame([model.dict() for model in self.status.active_trades])
-
-        if df.empty():
+        if len(self.status.active_trades) > 0:
+            df = pd.DataFrame([model.dict() for model in self.status.active_trades])
+            df['entry_time'] = pd.to_datetime(df['entry_time'], unit='ms', utc=True)
+            # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Grouper.html
+            # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+            if shift:
+                df['entry_time'] = df['entry_time'] + pd.Timedelta(shift)
+            return df.groupby(pd.Grouper(key='entry_time', freq=frequency)).agg({'entry_cost': 'sum'})
+        else:
             df = pd.DataFrame(
                 {
                     "entry_time": [pd.Timestamp.now(tz='UTC')],
                     "entry_cost": [0.0]
                 }
             )
-        df['entry_time'] = pd.to_datetime(df['entry_time'], unit='ms', utc=True)
-        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Grouper.html
-        # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
-        if shift:
-            df['entry_time'] = df['entry_time'] + pd.Timedelta(shift)
-        return df.groupby(pd.Grouper(key='entry_time', freq=frequency)).agg({'entry_cost': 'sum'})
+            return df
+
+
 
     def _spent_in_current_freq(self, frequency="D", spent_times_shift=None) -> float:
         real_spent_by_frequency = self._spent_by_frequency(frequency, spent_times_shift)
