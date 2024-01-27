@@ -68,6 +68,7 @@ Strategies:
           lr_buy_longitude: 5 # data points for linear regression
           band_length: 7
           band_mult: 1
+          band_low_pct: 1
           min_price_to_start_trailing: 0
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
 

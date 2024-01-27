@@ -23,6 +23,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
     lr_buy_longitude: float
     band_length: float
     band_mult: float
+    band_low_pct: float
     minimal_benefit_to_start_trailing: float
     min_price_to_start_trailing: float
 
@@ -47,8 +48,6 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
                 }
             )
             return df
-
-
 
     def _spent_in_current_freq(self, frequency="D", spent_times_shift=None) -> float:
         real_spent_by_frequency = self._spent_by_frequency(frequency, spent_times_shift)
@@ -99,7 +98,6 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
 
         return budget_left
 
-
     def _cancel_active_orders_with_lower_stop_loss(self, new_stop_loss: float) -> float:
         # Cancel any active stop order with a limit lower than the new one.
         # return the total amount of canceled orders
@@ -126,6 +124,9 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
             self.lr_buy_longitude = bot_config.config['lr_buy_longitude']
             self.band_length = bot_config.config['band_length']
             self.band_mult = bot_config.config['band_mult']
+            self.band_low_pct = bot_config.config['band_low_pct']
+            if self.band_low_pct <= 0.0:
+                raise ValueError('band_low_pct must be > 0.0')
             self.minimal_benefit_to_start_trailing = bot_config.config['minimal_benefit_to_start_trailing']
             if 'min_price_to_start_trailing' in self.bot_config.config:
                 self.min_price_to_start_trailing = bot_config.config['min_price_to_start_trailing']
@@ -194,33 +195,25 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
         self._metrics_manager.gauge("new_stop_loss", self.id, new_stop_loss, ["indicator"])
 
         #   stop_price
-        sl_price_dema = ta.dema(close=data.Low, length=self.band_length)
-        sl_price_stdev = ta.stdev(close=data.Low, length=self.band_length)
-        sl_price_lower_band = sl_price_dema - (self.band_mult * sl_price_stdev)
-
-        stop_price = float(sl_price_lower_band[-1:].iloc[0])
+        stop_price = new_stop_loss * (1 - (self.band_low_pct / 100))
         self._metrics_manager.gauge("stop_price", self.id, stop_price, ["indicator"])
-
-        # TODO: price and new_stop_loss error conditions
-        if stop_price > new_stop_loss:
-            self._logger.error(f"price ({stop_price}) should be never higher than new_stop_loss({new_stop_loss})")
 
         if stop_price < new_stop_loss * 0.8:
             self._logger.error(f"price ({stop_price}) is too far from new_stop_loss({new_stop_loss}) it may happend on test envs.")
-            stop_price = new_stop_loss * 0.9
+            new_stop_loss = 0
+            stop_price = 0
 
         if new_stop_loss > estimated_close_price:
             self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
             new_stop_loss = 0
             stop_price = 0
-        # this is a fix for testing
 
         total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(new_stop_loss)
         new_trades_on_limit_amount = 0
 
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades:
-            if trade.exit_order_id == '0': # TODO exit_order_id
+            if trade.exit_order_id == '0':  # TODO exit_order_id
                 if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)) and stop_price > self.min_price_to_start_trailing:
                     trade.exit_order_id = "new_grouped_order"
                     new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
