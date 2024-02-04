@@ -6,7 +6,7 @@ from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus, BotBudget
 from elena.domain.ports.exchange_manager import ExchangeManager
 from elena.domain.ports.logger import Logger
-from elena.domain.ports.metrics_manager import Metric, MetricsManager
+from elena.domain.ports.metrics_manager import MetricsManager
 from elena.domain.ports.notifications_manager import NotificationsManager
 from elena.domain.ports.strategy_manager import StrategyManager
 from elena.domain.services.elena import get_elena_instance
@@ -20,7 +20,9 @@ class TrailingStopLoss(GenericBot):
 
     band_length: int
     band_mult: float
+    band_low_pct: float
     minimal_benefit_to_start_trailing: float
+    min_price_to_start_trailing: float
 
     asset_to_manage: str
 
@@ -62,8 +64,12 @@ class TrailingStopLoss(GenericBot):
         balance = self.get_balance()
 
         base_symbol = self.pair.base
-        base_total = balance.currencies[base_symbol].total
-        base_free = balance.currencies[base_symbol].free
+        if base_symbol in balance.currencies:
+            base_total = balance.currencies[base_symbol].total
+            base_free = balance.currencies[base_symbol].free
+        else:
+            base_total = 0.0
+            base_free = 0.0
         total_to_manage = self._get_max_asset_to_manage(base_total)
         new_trade_size = total_to_manage - total_managed_asset
 
@@ -100,8 +106,16 @@ class TrailingStopLoss(GenericBot):
         try:
             self.band_length = bot_config.config['band_length']
             self.band_mult = bot_config.config['band_mult']
-            self.minimal_benefit_to_start_trailing = bot_config.config['minimal_benefit_to_start_trailing']
             self.asset_to_manage = bot_config.config['asset_to_manage']
+            self.band_low_pct = bot_config.config['band_low_pct']
+            if self.band_low_pct <= 0.0:
+                raise ValueError('band_low_pct must be > 0.0')
+            self.minimal_benefit_to_start_trailing = bot_config.config['minimal_benefit_to_start_trailing']
+            if 'min_price_to_start_trailing' in self.bot_config.config:
+                self.min_price_to_start_trailing = bot_config.config['min_price_to_start_trailing']
+            else:
+                self.min_price_to_start_trailing = 0.0
+
         except Exception as err:
             self._logger.error(f"Error initializing Bot config: {err}", error=err)
 
@@ -110,6 +124,11 @@ class TrailingStopLoss(GenericBot):
 
         # (1) is there any free balance to handle?
         new_trade_size = self._calculate_new_trade_size()
+
+        estimated_close_price = self.get_estimated_last_close()
+        if not estimated_close_price:
+            self._logger.error("Cannot get_estimated_last_close")
+            return
 
         # (2) calculate the new stop loss / stop_price / last_close
         data_points = self.band_length + 10  # make sure we ask the enough data for the indicator
@@ -122,32 +141,21 @@ class TrailingStopLoss(GenericBot):
         sl_lower_band = sl_dema - (self.band_mult * sl_stdev)
 
         new_stop_loss = float(sl_lower_band[-1:].iloc[0])  # get the last
-        # self._metrics_manager.gauge(Metric.INDICATOR, self.id, new_stop_loss)
+        self._metrics_manager.gauge("new_stop_loss", self.id, new_stop_loss, ["indicator"])
 
         #   stop_price
-        sl_price_dema = ta.dema(close=candles.Low, length=self.band_length)
-        sl_price_stdev = ta.stdev(close=candles.Low, length=self.band_length)
-        sl_price_lower_band = sl_price_dema - (self.band_mult * sl_price_stdev)
-
-        stop_price = float(sl_price_lower_band[-1:].iloc[0])
-        # self._metrics_manager.gauge(Metric.INDICATOR, self.id, stop_price)
-
-        # get the last close as entry price for trade
-        last_close = self.get_estimated_last_close()
-
-        # TODO: price and new_stop_loss error conditions
-        if stop_price > new_stop_loss:
-            self._logger.error(f"price ({stop_price}) should be never higher than new_stop_loss({new_stop_loss})")
+        stop_price = new_stop_loss * (1 - (self.band_low_pct / 100))
+        self._metrics_manager.gauge("stop_price", self.id, stop_price, ["indicator"])
 
         if stop_price < new_stop_loss * 0.8:
             self._logger.error(f"price ({stop_price}) is too far from new_stop_loss({new_stop_loss}) it may happend on test envs.")
-            stop_price = new_stop_loss * 0.9
-
-        if new_stop_loss > last_close:
-            self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({last_close})")
             new_stop_loss = 0
             stop_price = 0
-        # this is a fix for testing
+
+        if new_stop_loss > estimated_close_price:
+            self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
+            new_stop_loss = 0
+            stop_price = 0
 
         # (3) New Trade logic
         detected_new_balance = 'detected new balance to manage'
@@ -156,7 +164,7 @@ class TrailingStopLoss(GenericBot):
 
         if new_trade_size > 0:
             # All Trades start/"born" here...
-            self.new_trade_manual(size=new_trade_size, entry_price=last_close, exit_order_id=exit_order_id, exit_price=new_stop_loss)
+            self.new_trade_manual(size=new_trade_size, entry_price=estimated_close_price, exit_order_id=exit_order_id, exit_price=new_stop_loss)
 
         # (4) OLD Trades logic & cancelled orders
 
@@ -171,7 +179,7 @@ class TrailingStopLoss(GenericBot):
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades:
             if trade.exit_order_id == detected_new_balance:
-                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing/100)):
+                if stop_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing/100)) and stop_price > self.min_price_to_start_trailing:
                     trade.exit_order_id = "new_grouped_order"
                     new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
 
