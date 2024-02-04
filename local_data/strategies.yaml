@@ -2,7 +2,7 @@ Strategies:
   - id: DCA_Strict
     name: DCA_Strict
     enabled: true
-    strategy_class: elena_basic.strategies.dca_strict.DCA_Strict
+    strategy_class: elena_basics.strategies.dca_strict.DCA_Strict
 
     bots:
       - id: DCA_BTC_USDT_1
@@ -23,7 +23,7 @@ Strategies:
   - id: DCA_LR
     name: DCA_LR
     enabled: false
-    strategy_class: elena_basic.strategies.dca_conditional_lr.DCA_Conditional_Buy_LR
+    strategy_class: elena_basics.strategies.dca_conditional_lr.DCA_Conditional_Buy_LR
 
     bots:
       - id: DCA_LR_BTC_USDT_1
@@ -45,7 +45,7 @@ Strategies:
   - id: DCA_LR_SL
     name: DCA_LR_SL
     enabled: true
-    strategy_class: elena_basic.strategies.dca_conditional_lr_trailing_stop.DCA_Conditional_Buy_LR_with_TrailingStop
+    strategy_class: elena_basics.strategies.dca_conditional_lr_trailing_stop.DCA_Conditional_Buy_LR_with_TrailingStop
 
     bots:
       - id: DCA_LR_SL_BTC_USDT_1
@@ -101,7 +101,7 @@ Strategies:
   - id: TrailingStopLoss
     name: TrailingStopLoss
     enabled: true
-    strategy_class: elena_basic.strategies.trailing_stop.TrailingStopLoss
+    strategy_class: elena_basics.strategies.trailing_stop.TrailingStopLoss
 
     bots:
       - id: ETH_USDT_1
