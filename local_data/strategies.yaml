@@ -72,8 +72,8 @@ Strategies:
           min_price_to_start_trailing: 0
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
 
-      - id: ByBit_DCA_LR_SL_BTC_USDC
-        name: ByBit DCA_LR_SL BTC_USDC
+      - id: kucoin_DCA_LR_SL_BTC_USDC
+        name: kucoin DCA_LR_SL BTC_USDC
         enabled: false
         pair: BTC/USDC
         exchange: bybit
@@ -124,11 +124,11 @@ Strategies:
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
           asset_to_manage: 100%
 
-      - id: ByBit_HNT_USDT_1
-        name: TrailingStopLoss bybit/USDT
-        enabled: true
+      - id: kucoin_HNT_USDT_1
+        name: TrailingStopLoss kucoin/USDT
+        enabled: false
         pair: HNT/USDT
-        exchange: bybit
+        exchange: kucoin
         time_frame: 1d # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "* * * * *" # At every minute
         budget_limit: 0.0 # don't control budget
