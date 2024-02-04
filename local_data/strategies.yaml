@@ -11,7 +11,7 @@ Strategies:
         pair: BTC/USDT
         exchange: binance
         time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
-        cron_expression: "0,30 * * * *" # At every 5th minute
+        cron_expression: "*/5 * * * *" # At every 5th minute
         budget_limit: 600.0 # Buy up to 600 UDST
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
@@ -32,8 +32,8 @@ Strategies:
         pair: BTC/USDT
         exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
-        cron_expression: "0,30 * * * *" # At every 5th minute
-        budget_limit: 1600.0 # Buy up to 600 UDST
+        cron_expression: "*/5 * * * *" # At every 5th minute
+        budget_limit: 1600.0 # Buy up to 1600 UDST
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
           - DCA
@@ -54,47 +54,22 @@ Strategies:
         pair: BTC/USDT
         exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
-        cron_expression: "* * * * *" # At every 5th minute
-        budget_limit: 2000.0 # Buy up to 600 UDST
+        cron_expression: "* * * * *" # At every minute
+        budget_limit: 2000.0 # Buy up to 2000 UDST
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
           - DCA
           - ranging
         config:
           spend_on_order: 100.0 # spend 100 USDT on every cycle
-          daily_budget: 2000.0
-          weekly_budget: 10000.0
+          daily_budget: 200.0 # spend 200 USDT per day
+          weekly_budget: 1000.0 # spend 1000 USDT per week
           spent_times_shift: "+5 hours"
           lr_buy_longitude: 5 # data points for linear regression
           band_length: 7
           band_mult: 1
           band_low_pct: 1
-          min_price_to_start_trailing: 0
-          minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
-
-      - id: kucoin_DCA_LR_SL_BTC_USDC
-        name: kucoin DCA_LR_SL BTC_USDC
-        enabled: false
-        pair: BTC/USDC
-        exchange: bybit
-        time_frame: 1d
-        cron_expression: "* * * * *"
-        budget_limit: 1600.0
-        pct_reinvest_profit: 79.0
-        tags:
-          - DCA
-          - bull
-          - ex_bybit
-        config:
-          spend_on_order: 200.0
-          daily_budget: 200.0
-          # weekly_budget: 0.0
-          spent_times_shift: "-5 hours"
-          lr_buy_longitude: 7
-          band_length: 34
-          band_mult: 2
-          band_low_pct: 3.8906
-          min_price_to_start_trailing: 0.0
+          min_price_to_start_trailing: 0 # start trailing when price is higher % minimal benefit only
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
 
 
@@ -110,7 +85,7 @@ Strategies:
         pair: ETH/USDT
         exchange: binance
         time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
-        cron_expression: "0 * * * *" # At every minute
+        cron_expression: "0 * * * *" # At every hour
         budget_limit: 0.0 # don't control budget
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
@@ -120,30 +95,9 @@ Strategies:
           band_length: 34
           band_mult: 2
           band_low_pct: 0
-          min_price_to_start_trailing: 1900
+          min_price_to_start_trailing: 1900 # start trailing when price is higher than 1900
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
           asset_to_manage: 100%
-
-      - id: kucoin_HNT_USDT_1
-        name: TrailingStopLoss kucoin/USDT
-        enabled: false
-        pair: HNT/USDT
-        exchange: kucoin
-        time_frame: 1d # Valid values: 1m, 1h, 1d, 1M, 1y
-        cron_expression: "* * * * *" # At every minute
-        budget_limit: 0.0 # don't control budget
-        pct_reinvest_profit: 100.0 # reinvest all profits
-        tags:
-          - TrailingStopLoss
-          - bear
-        config:
-          band_length: 34
-          band_mult: 2
-          band_low_pct: 3.7044978
-          min_price_to_start_trailing: 0.0
-          minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
-          asset_to_manage: 100%
-
 
 
 Tags:
