@@ -50,7 +50,7 @@ Strategies:
     bots:
       - id: DCA_LR_SL_BTC_USDT_1
         name: DCA Conditional LR with Trailing Stop Loss BTC/USDT
-        enabled: false
+        enabled: true
         pair: BTC/USDT
         exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
@@ -62,7 +62,7 @@ Strategies:
           - ranging
         config:
           spend_on_order: 100.0 # spend 100 USDT on every cycle
-          daily_budget: 200.0 # spend 200 USDT per day
+          daily_budget: 500.0 # spend 200 USDT per day
           weekly_budget: 1000.0 # spend 1000 USDT per week
           spent_times_shift: "+5 hours"
           lr_buy_longitude: 5 # data points for linear regression
@@ -81,11 +81,11 @@ Strategies:
     bots:
       - id: ETH_USDT_1
         name: TrailingStopLoss BTC/USDT
-        enabled: false
+        enabled: true
         pair: ETH/USDT
         exchange: binance
         time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
-        cron_expression: "0 * * * *" # At every hour
+        cron_expression: "* * * * *"
         budget_limit: 0.0 # don't control budget
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
@@ -94,7 +94,7 @@ Strategies:
         config:
           band_length: 34
           band_mult: 2
-          band_low_pct: 0
+          band_low_pct: 1
           min_price_to_start_trailing: 1900 # start trailing when price is higher than 1900
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
           asset_to_manage: 100%
