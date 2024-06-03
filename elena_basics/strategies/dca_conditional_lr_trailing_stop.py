@@ -204,7 +204,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(GenericBot):
             stop_price = 0
 
         if new_stop_loss > estimated_close_price:
-            self._logger.error(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
+            self._logger.warning(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
             new_stop_loss = 0
             stop_price = 0
 
