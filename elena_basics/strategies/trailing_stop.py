@@ -15,6 +15,7 @@ from elena.domain.services.generic_bot import GenericBot
 import pandas_ta as ta
 
 
+# noinspection DuplicatedCode
 class TrailingStopLoss(GenericBot):
     # Trailing Stop Loss
 

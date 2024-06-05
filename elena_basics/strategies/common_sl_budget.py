@@ -113,6 +113,64 @@ class Common_stop_loss_budget_control(GenericBot):
                     self._logger.error(f"Error canceling order: {order.id}.")
         return total_amount_canceled_orders, canceled_orders
 
+    def manage_trailing_stop_losses(self, data: pd.DataFrame, estimated_close_price: float, band_length: float, band_mult: float):
+        # TRAILING STOP LOGIC
+        # Indicator: Standard Error Bands based on DEMA
+        #   new_stop_loss
+
+        sl_dema = ta.dema(close=data.Close, length=band_length)
+        sl_stdev = ta.stdev(close=data.Close, length=band_length)
+        sl_lower_band = sl_dema - (band_mult * sl_stdev)
+
+        new_stop_loss = float(sl_lower_band[-1:].iloc[0])  # get the last
+        self._metrics_manager.gauge("new_stop_loss", self.id, new_stop_loss, ["indicator"])
+
+        #   stop_price
+        stop_price = new_stop_loss * (1 - (self.band_low_pct / 100))
+        self._metrics_manager.gauge("stop_price", self.id, stop_price, ["indicator"])
+
+        if stop_price < new_stop_loss * 0.8:
+            self._logger.error(
+                f"price ({stop_price}) is too far from new_stop_loss({new_stop_loss}) it may happend on test envs.")
+            new_stop_loss = 0
+            stop_price = 0
+
+        if new_stop_loss > estimated_close_price:
+            self._logger.warning(
+                f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
+            new_stop_loss = 0
+            stop_price = 0
+
+        total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(new_stop_loss)
+        new_trades_on_limit_amount = 0
+
+        # find trades that get the limit to start trailing stops
+        for trade in self.status.active_trades:
+            if trade.exit_order_id == '0':  # TODO exit_order_id
+                if stop_price > trade.entry_price * (1 + (
+                        self.minimal_benefit_to_start_trailing / 100)) and stop_price > self.min_price_to_start_trailing:
+                    trade.exit_order_id = "new_grouped_order"
+                    new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
+
+        # create a new stop order with the sum of all canceled orders + the trades that enter the limit
+        grouped_amount_canceled_orders_and_new_trades = total_amount_canceled_orders + new_trades_on_limit_amount
+
+        if grouped_amount_canceled_orders_and_new_trades >= self.limit_min_amount():
+            new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades, stop_price=new_stop_loss,
+                                       price=stop_price)
+
+            if new_order:
+                canceled_orders.append("new_grouped_order")
+
+                # update trades with the new_order_id
+                for trade in self.status.active_trades:
+                    if trade.exit_order_id in canceled_orders:
+                        trade.exit_order_id = new_order.id
+                        trade.exit_price = new_stop_loss  # not real until the stop loss really executes.
+            else:
+                # TODO
+                self._logger.error("Can't create stop loss grouped_amount_canceled_orders_and_new_trades ")
+
     def init(self, manager: StrategyManager, logger: Logger, metrics_manager: MetricsManager, notifications_manager: NotificationsManager, exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus, ):  # type: ignore
         super().init(manager, logger, metrics_manager, notifications_manager, exchange_manager, bot_config, bot_status,)
 

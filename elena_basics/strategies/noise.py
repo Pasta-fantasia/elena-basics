@@ -11,6 +11,8 @@ from elena.domain.ports.notifications_manager import NotificationsManager
 from elena.domain.ports.strategy_manager import StrategyManager
 from elena.domain.services.generic_bot import GenericBot
 
+
+
 import numpy as np
 import pandas as pd
 import pandas_ta as ta
@@ -18,7 +20,7 @@ import pandas_ta as ta
 from elena_basics.strategies.common_sl_budget import Common_stop_loss_budget_control
 
 
-class DCA_Conditional_Buy_LR_with_TrailingStop(Common_stop_loss_budget_control):
+class Noise(Common_stop_loss_budget_control):
     # Strict dates DCA, just buy on a regular basis.
 
     spend_on_order: float
@@ -32,6 +34,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(Common_stop_loss_budget_control):
     _logger: Logger
     _metrics_manager: MetricsManager
     _notifications_manager: NotificationsManager
+
 
     def init(self, manager: StrategyManager, logger: Logger, metrics_manager: MetricsManager, notifications_manager: NotificationsManager, exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus, ):  # type: ignore
         super().init(manager, logger, metrics_manager, notifications_manager, exchange_manager, bot_config, bot_status,)
@@ -82,6 +85,8 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(Common_stop_loss_budget_control):
         angle = float(linreg[-1:].iloc[0])  # get the last
         self._metrics_manager.gauge("LR_angle", self.id, angle, ["indicator"])
 
+        # SELL LOGIC
+
         # BUY LOGIC
         error_on_buy = False
         if angle > 0:
@@ -104,6 +109,6 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(Common_stop_loss_budget_control):
                 error_on_buy = True
 
         # TRAILING STOP LOGIC
-        self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult)
+        self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult) # TODO: sell_band_length, sell_band_length
 
         return self.status

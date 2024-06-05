@@ -1,7 +1,7 @@
 Strategies:
   - id: DCA_Strict
     name: DCA_Strict
-    enabled: true
+    enabled: false
     strategy_class: elena_basics.strategies.dca_strict.DCA_Strict
 
     bots:
@@ -75,7 +75,7 @@ Strategies:
 
   - id: TrailingStopLoss
     name: TrailingStopLoss
-    enabled: true
+    enabled: false
     strategy_class: elena_basics.strategies.trailing_stop.TrailingStopLoss
 
     bots:
