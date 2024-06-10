@@ -31,7 +31,7 @@ class DCA_Strict(GenericBot):
         self._notifications_manager = notifications_manager
 
         try:
-            self.spend_on_order = bot_config.config['spend_on_order']
+            self.spend_on_order = float(bot_config.config['spend_on_order'])
         except Exception as err:
             self._logger.error(f"Error initializing Bot config: {err}", error=err)
 

@@ -105,15 +105,15 @@ class TrailingStopLoss(GenericBot):
         self._notifications_manager = notifications_manager
 
         try:
-            self.band_length = bot_config.config['band_length']
-            self.band_mult = bot_config.config['band_mult']
-            self.asset_to_manage = bot_config.config['asset_to_manage']
-            self.band_low_pct = bot_config.config['band_low_pct']
+            self.band_length = float(bot_config.config['band_length'])
+            self.band_mult = float(bot_config.config['band_mult'])
+            self.asset_to_manage = str(bot_config.config['asset_to_manage'])  # asset_to_manage can be a number or a %
+            self.band_low_pct = float(bot_config.config['band_low_pct'])
             if self.band_low_pct <= 0.0:
                 raise ValueError('band_low_pct must be > 0.0')
-            self.minimal_benefit_to_start_trailing = bot_config.config['minimal_benefit_to_start_trailing']
+            self.minimal_benefit_to_start_trailing = float(bot_config.config['minimal_benefit_to_start_trailing'])
             if 'min_price_to_start_trailing' in self.bot_config.config:
-                self.min_price_to_start_trailing = bot_config.config['min_price_to_start_trailing']
+                self.min_price_to_start_trailing = float(bot_config.config['min_price_to_start_trailing'])
             else:
                 self.min_price_to_start_trailing = 0.0
 

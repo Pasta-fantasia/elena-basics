@@ -40,16 +40,16 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(Common_stop_loss_budget_control):
         self._notifications_manager = notifications_manager
 
         try:
-            self.spend_on_order = bot_config.config['spend_on_order']
-            self.lr_buy_longitude = bot_config.config['lr_buy_longitude']
-            self.band_length = bot_config.config['band_length']
-            self.band_mult = bot_config.config['band_mult']
-            self.band_low_pct = bot_config.config['band_low_pct']
+            self.spend_on_order = float(bot_config.config['spend_on_order'])
+            self.lr_buy_longitude = float(bot_config.config['lr_buy_longitude'])
+            self.band_length = float(bot_config.config['band_length'])
+            self.band_mult = float(bot_config.config['band_mult'])
+            self.band_low_pct = float(bot_config.config['band_low_pct'])
             if self.band_low_pct <= 0.0:
                 raise ValueError('band_low_pct must be > 0.0')
-            self.minimal_benefit_to_start_trailing = bot_config.config['minimal_benefit_to_start_trailing']
+            self.minimal_benefit_to_start_trailing = float(bot_config.config['minimal_benefit_to_start_trailing'])
             if 'min_price_to_start_trailing' in self.bot_config.config:
-                self.min_price_to_start_trailing = bot_config.config['min_price_to_start_trailing']
+                self.min_price_to_start_trailing = float(bot_config.config['min_price_to_start_trailing'])
             else:
                 self.min_price_to_start_trailing = 0.0
         except Exception as err:

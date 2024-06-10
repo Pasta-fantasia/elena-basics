@@ -32,8 +32,8 @@ class DCA_Conditional_Buy_LR(GenericBot):
         self._notifications_manager = notifications_manager
 
         try:
-            self.spend_on_order = bot_config.config['spend_on_order']
-            self.lr_buy_longitude = bot_config.config['lr_buy_longitude']
+            self.spend_on_order = float(bot_config.config['spend_on_order'])
+            self.lr_buy_longitude = float(bot_config.config['lr_buy_longitude'])
         except Exception as err:
             self._logger.error(f"Error initializing Bot config: {err}", error=err)
 
