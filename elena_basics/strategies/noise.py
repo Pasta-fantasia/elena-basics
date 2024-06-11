@@ -44,12 +44,24 @@ class Noise(Common_stop_loss_budget_control):
 
         try:
             self.spend_on_order = float(bot_config.config['spend_on_order'])
-            self.lr_buy_longitude = float(bot_config.config['lr_buy_longitude'])
-            self.band_length = float(bot_config.config['band_length'])
-            self.band_mult = float(bot_config.config['band_mult'])
-            self.band_low_pct = float(bot_config.config['band_low_pct'])
-            if self.band_low_pct <= 0.0:
+
+            self.bb_band_lenght = float(bot_config.config['bb_band_lenght'])
+            self.bb_band_mult = float(bot_config.config['bb_band_mult'])
+
+            self.buy_macd_fast = float(bot_config.config['buy_macd_fast'])
+            self.buy_macd_slow = float(bot_config.config['buy_macd_slow'])
+            self.buy_macd_signal = float(bot_config.config['buy_macd_signal'])
+
+            self.sell_macd_fast = float(bot_config.config['sell_macd_fast'])
+            self.sell_macd_slow = float(bot_config.config['sell_macd_slow'])
+            self.sell_macd_signal = float(bot_config.config['sell_macd_signal'])
+
+            self.sell_band_lenght = float(bot_config.config['sell_band_lenght'])
+            self.sell_band_mult = float(bot_config.config['sell_band_mult'])
+            self.sell_band_low_pct = float(bot_config.config['sell_band_low_pct'])
+            if self.sell_band_low_pct <= 0.0:
                 raise ValueError('band_low_pct must be > 0.0')
+
             self.minimal_benefit_to_start_trailing = float(bot_config.config['minimal_benefit_to_start_trailing'])
             if 'min_price_to_start_trailing' in self.bot_config.config:
                 self.min_price_to_start_trailing = float(bot_config.config['min_price_to_start_trailing'])
@@ -57,6 +69,11 @@ class Noise(Common_stop_loss_budget_control):
                 self.min_price_to_start_trailing = 0.0
         except Exception as err:
             self._logger.error(f"Error initializing Bot config: {err}", error=err)
+
+    @staticmethod
+    def get_macd_histogram(data, p_fast, p_slow, p_signal) -> float:
+        macd = ta.macd(close=data.Close, fast=p_fast, slow=p_slow, signal=p_signal)
+        return macd[-1:].iloc[0][1]
 
     def next(self) -> BotStatus:
         self._logger.info('%s strategy: processing next cycle ...', self.name)
@@ -78,12 +95,31 @@ class Noise(Common_stop_loss_budget_control):
             self._logger.error("Cannot get balance")
             return
 
-        data_points = int(max(self.lr_buy_longitude,self.band_length) + 10)  # make sure we ask the enough data for the indicator
+        data_points = int(max(self.bb_band_lenght,
+                              self.buy_macd_fast, self.buy_macd_fast,
+                              self.sell_macd_fast, self.sell_macd_slow,
+                              self.sell_band_lenght) + 10)  # make sure we ask the enough data for the indicator
         data = self.read_candles(page_size=data_points)
 
-        linreg = ta.linreg(close=data.Close, length=self.lr_buy_longitude, angle=True)
-        angle = float(linreg[-1:].iloc[0])  # get the last
-        self._metrics_manager.gauge("LR_angle", self.id, angle, ["indicator"])
+        # linreg = ta.linreg(close=data.Close, length=self.lr_buy_longitude, angle=True)
+        # angle = float(linreg[-1:].iloc[0])  # get the last
+        # self._metrics_manager.gauge("LR_angle", self.id, angle, ["indicator"])
+
+        bbands = ta.bbands(close=data.Close, length=self.bb_band_lenght, std=self.bb_band_mult)
+
+        bb_lower_band = bbands[-1:].iloc[0][0]
+        bb_central_band = bbands[-1:].iloc[0][1]
+        bb_upper_band = bbands[-1:].iloc[0][2]
+
+        self._metrics_manager.gauge("bb_lower_band", self.id, bb_lower_band, ["indicator"])
+        self._metrics_manager.gauge("bb_central_band", self.id, bb_central_band, ["indicator"])
+        self._metrics_manager.gauge("bb_upper_band", self.id, bb_upper_band, ["indicator"])
+
+        buy_macd_h = self.get_macd_histogram(data, self.buy_macd_fast, self.buy_macd_slow, self.buy_macd_signal)
+        self._metrics_manager.gauge("buy_macd_h", self.id, buy_macd_h, ["indicator"])
+
+        sell_macd_h = self.get_macd_histogram(data, self.sell_macd_fast, self.sell_macd_slow, self.sell_macd_signal)
+        self._metrics_manager.gauge("sell_macd_h", self.id, sell_macd_h, ["indicator"])
 
         # SELL LOGIC
 
@@ -109,6 +145,6 @@ class Noise(Common_stop_loss_budget_control):
                 error_on_buy = True
 
         # TRAILING STOP LOGIC
-        self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult) # TODO: sell_band_length, sell_band_length
+        self.manage_trailing_stop_losses(data, estimated_close_price, self.sell_band_lenght, self.sell_band_mult)
 
         return self.status

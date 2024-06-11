@@ -44,7 +44,7 @@ Strategies:
 
   - id: DCA_LR_SL
     name: DCA_LR_SL
-    enabled: true
+    enabled: false
     strategy_class: elena_basics.strategies.dca_conditional_lr_trailing_stop.DCA_Conditional_Buy_LR_with_TrailingStop
 
     bots:
@@ -55,14 +55,14 @@ Strategies:
         exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "* * * * *" # At every minute
-        budget_limit: 5000.0 # Buy up to 2000 UDST
+        budget_limit: 5100.0 # Buy up to 2000 UDST
         pct_reinvest_profit: 100.0 # reinvest all profits
         tags:
           - DCA
           - ranging
         config:
           spend_on_order: 100.0 # spend 100 USDT on every cycle
-          daily_budget: 1000.0 # spend 200 USDT per day
+          daily_budget: 1500.0 # spend 200 USDT per day
           weekly_budget: 3000.0 # spend 1000 USDT per week
           spent_times_shift: "+5 hours"
           lr_buy_longitude: 5 # data points for linear regression
@@ -72,6 +72,49 @@ Strategies:
           min_price_to_start_trailing: 0 # start trailing when price is higher % minimal benefit only
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
 
+  - id: Noise
+    name: Noise
+    enabled: true
+    strategy_class: elena_basics.strategies.noise.Noise
+
+    bots:
+      - id: Noise_BTC_USDT_1
+        name: Noise BTC/USDT
+        enabled: true
+        pair: BTC/USDT
+        exchange: binance
+        time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
+        cron_expression: "* * * * *" # At every minute
+        budget_limit: 5000.0 # Buy up to 2000 UDST
+        pct_reinvest_profit: 100.0 # reinvest all profits
+        tags:
+          - Noise
+          - ranging
+        config:
+          spend_on_order: 100.0 # spend 100 USDT on every cycle
+          daily_budget: 1500.0 # spend 200 USDT per day
+          weekly_budget: 3000.0 # spend 1000 USDT per week
+          spent_times_shift: "+5 hours"
+
+          bb_band_lenght: 13
+          bb_band_mult: 1
+
+          # 21.0,55.0,21.0
+          buy_macd_fast: 21
+          buy_macd_slow: 55
+          buy_macd_signal: 21
+
+          # 8.0,21.0,21.0
+          sell_macd_fast: 8
+          sell_macd_slow: 21
+          sell_macd_signal: 21
+
+          sell_band_lenght: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 1
+
+          min_price_to_start_trailing: 0 # start trailing when price is higher % minimal benefit only
+          minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
 
   - id: TrailingStopLoss
     name: TrailingStopLoss
