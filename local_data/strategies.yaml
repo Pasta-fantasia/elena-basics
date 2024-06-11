@@ -44,7 +44,7 @@ Strategies:
 
   - id: DCA_LR_SL
     name: DCA_LR_SL
-    enabled: false
+    enabled: true
     strategy_class: elena_basics.strategies.dca_conditional_lr_trailing_stop.DCA_Conditional_Buy_LR_with_TrailingStop
 
     bots:
@@ -80,7 +80,7 @@ Strategies:
     bots:
       - id: Noise_BTC_USDT_1
         name: Noise BTC/USDT
-        enabled: true
+        enabled: false
         pair: BTC/USDT
         exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
