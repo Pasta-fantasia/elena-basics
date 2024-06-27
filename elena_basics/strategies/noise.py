@@ -44,8 +44,6 @@ class Noise(CommonStopLossBudgetControl):
     _metrics_manager: MetricsManager
     _notifications_manager: NotificationsManager
 
-    def __init__(self):
-
     def init(self, manager: StrategyManager, logger: Logger, metrics_manager: MetricsManager, notifications_manager: NotificationsManager, exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus, ):  # type: ignore
         super().init(manager, logger, metrics_manager, notifications_manager, exchange_manager, bot_config, bot_status,)
         self._logger = logger

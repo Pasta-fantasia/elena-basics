@@ -55,15 +55,15 @@ Strategies:
         exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "* * * * *" # At every minute
-        budget_limit: 5100.0 # Buy up to 2000 UDST
-        pct_reinvest_profit: 100.0 # reinvest all profits
+        budget_limit: 9000.0 # Buy up to 2000 UDST
+        pct_reinvest_profit: 50.0 # reinvest all profits
         tags:
           - DCA
           - ranging
         config:
           spend_on_order: 100.0 # spend 100 USDT on every cycle
           daily_budget: 1500.0 # spend 200 USDT per day
-          weekly_budget: 3000.0 # spend 1000 USDT per week
+          weekly_budget: 9000.0 # spend 1000 USDT per week
           spent_times_shift: "+5 hours"
           lr_buy_longitude: 5 # data points for linear regression
           band_length: 7
@@ -96,7 +96,7 @@ Strategies:
           weekly_budget: 3000.0 # spend 1000 USDT per week
           spent_times_shift: "+5 hours"
 
-          bb_band_lenght: 13
+          bb_band_length: 13
           bb_band_mult: 1
 
           # 21.0,55.0,21.0
@@ -109,7 +109,7 @@ Strategies:
           sell_macd_slow: 21
           sell_macd_signal: 21
 
-          sell_band_lenght: 34
+          sell_band_length: 34
           sell_band_mult: 1
           sell_band_low_pct: 1
 
