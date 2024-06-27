@@ -77,6 +77,8 @@ class Noise(Common_stop_loss_budget_control):
 
     def next(self) -> BotStatus:
         self._logger.info('%s strategy: processing next cycle ...', self.name)
+        
+        # basic initial data
 
         min_amount = self.limit_min_amount()
 
@@ -101,9 +103,7 @@ class Noise(Common_stop_loss_budget_control):
                               self.sell_band_lenght) + 10)  # make sure we ask the enough data for the indicator
         data = self.read_candles(page_size=data_points)
 
-        # linreg = ta.linreg(close=data.Close, length=self.lr_buy_longitude, angle=True)
-        # angle = float(linreg[-1:].iloc[0])  # get the last
-        # self._metrics_manager.gauge("LR_angle", self.id, angle, ["indicator"])
+        # Indicators calc
 
         bbands = ta.bbands(close=data.Close, length=self.bb_band_lenght, std=self.bb_band_mult)
 
@@ -122,10 +122,21 @@ class Noise(Common_stop_loss_budget_control):
         self._metrics_manager.gauge("sell_macd_h", self.id, sell_macd_h, ["indicator"])
 
         # SELL LOGIC
+        # if sell condition are met sell any trade with minimal benefit
+        if estimated_close_price > bb_upper_band and sell_macd_h < 0:
+            for trade in self.status.active_trades[:]:
+                if estimated_close_price > trade.entry_price * self.minimal_benefit_to_start_trailing:
+                    # sum trades to sell
+                    # is any stop loss open?
+                    pass
+            # if sum_trades>0 => create market sell order or a "forced" stop loss
+            #   if stop loss are open => cancel before sell
+            # check balance before?
+            # what if the sell doesn't work
 
         # BUY LOGIC
         error_on_buy = False
-        if angle > 0:
+        if estimated_close_price < bb_central_band and buy_macd_h > 0:
             quote_symbol = self.pair.quote
             quote_free = balance.currencies[quote_symbol].free
 
