@@ -15,12 +15,10 @@ import numpy as np
 import pandas as pd
 import pandas_ta as ta
 
-from elena_basics.strategies.common_sl_budget import Common_stop_loss_budget_control
+from elena_basics.strategies.common_sl_budget import CommonStopLossBudgetControl
 
 
-class DCA_Conditional_Buy_LR_with_TrailingStop(Common_stop_loss_budget_control):
-    # Strict dates DCA, just buy on a regular basis.
-
+class DCA_Conditional_Buy_LR_with_TrailingStop(CommonStopLossBudgetControl):
     spend_on_order: float
     lr_buy_longitude: float
     band_length: float
@@ -83,27 +81,10 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(Common_stop_loss_budget_control):
         self._metrics_manager.gauge("LR_angle", self.id, angle, ["indicator"])
 
         # BUY LOGIC
-        error_on_buy = False
         if angle > 0:
-            quote_symbol = self.pair.quote
-            quote_free = balance.currencies[quote_symbol].free
-
-            amount_to_spend = min(self.budget_left_in_freq(), self.spend_on_order, quote_free)
-            amount_to_buy = amount_to_spend / estimated_close_price
-            amount_to_buy = self.amount_to_precision(amount_to_buy)
-
-            if amount_to_buy >= min_amount and amount_to_spend >= min_cost:
-                market_buy_order = self.create_market_buy_order(amount_to_buy)
-                if not market_buy_order:
-                    self._logger.error("Buy order failed!")
-                    error_on_buy = True
-            else:
-                msg = f"Not enough balance to buy min_amount/min_cost. {self.pair.base}, quote_free={quote_free}, min_amount={min_amount}, min_cost={min_cost}, amount_to_spend={amount_to_spend}, free-budget={self.status.budget.free}, estimated_close_price={estimated_close_price}"
-                self._logger.warning(msg)
-                # self._notifications_manager.medium(msg)
-                error_on_buy = True
+            self.buy_based_on_budget(balance, estimated_close_price, min_amount, min_cost)
 
         # TRAILING STOP LOGIC
-        self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult)
+        self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult, self.band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
 
         return self.status

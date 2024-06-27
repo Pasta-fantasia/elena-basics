@@ -17,17 +17,26 @@ import numpy as np
 import pandas as pd
 import pandas_ta as ta
 
-from elena_basics.strategies.common_sl_budget import Common_stop_loss_budget_control
+from elena_basics.strategies.common_sl_budget import CommonStopLossBudgetControl
 
 
-class Noise(Common_stop_loss_budget_control):
-    # Strict dates DCA, just buy on a regular basis.
-
+class Noise(CommonStopLossBudgetControl):
     spend_on_order: float
-    lr_buy_longitude: float
-    band_length: float
-    band_mult: float
-    band_low_pct: float
+    bb_band_length: float
+    bb_band_mult: float
+
+    buy_macd_fast: float
+    buy_macd_slow: float
+    buy_macd_signal: float
+
+    sell_macd_fast: float
+    sell_macd_slow: float
+    sell_macd_signal: float
+
+    sell_band_length: float
+    sell_band_mult: float
+    sell_band_low_pct: float
+
     minimal_benefit_to_start_trailing: float
     min_price_to_start_trailing: float
 
@@ -35,6 +44,7 @@ class Noise(Common_stop_loss_budget_control):
     _metrics_manager: MetricsManager
     _notifications_manager: NotificationsManager
 
+    def __init__(self):
 
     def init(self, manager: StrategyManager, logger: Logger, metrics_manager: MetricsManager, notifications_manager: NotificationsManager, exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus, ):  # type: ignore
         super().init(manager, logger, metrics_manager, notifications_manager, exchange_manager, bot_config, bot_status,)
@@ -45,7 +55,7 @@ class Noise(Common_stop_loss_budget_control):
         try:
             self.spend_on_order = float(bot_config.config['spend_on_order'])
 
-            self.bb_band_lenght = float(bot_config.config['bb_band_lenght'])
+            self.bb_band_length = float(bot_config.config['bb_band_length'])
             self.bb_band_mult = float(bot_config.config['bb_band_mult'])
 
             self.buy_macd_fast = float(bot_config.config['buy_macd_fast'])
@@ -56,7 +66,7 @@ class Noise(Common_stop_loss_budget_control):
             self.sell_macd_slow = float(bot_config.config['sell_macd_slow'])
             self.sell_macd_signal = float(bot_config.config['sell_macd_signal'])
 
-            self.sell_band_lenght = float(bot_config.config['sell_band_lenght'])
+            self.sell_band_length = float(bot_config.config['sell_band_length'])
             self.sell_band_mult = float(bot_config.config['sell_band_mult'])
             self.sell_band_low_pct = float(bot_config.config['sell_band_low_pct'])
             if self.sell_band_low_pct <= 0.0:
@@ -79,7 +89,6 @@ class Noise(Common_stop_loss_budget_control):
         self._logger.info('%s strategy: processing next cycle ...', self.name)
         
         # basic initial data
-
         min_amount = self.limit_min_amount()
 
         min_cost = self.limit_min_cost()
@@ -97,7 +106,7 @@ class Noise(Common_stop_loss_budget_control):
             self._logger.error("Cannot get balance")
             return
 
-        data_points = int(max(self.bb_band_lenght,
+        data_points = int(max(self.bb_band_length,
                               self.buy_macd_fast, self.buy_macd_fast,
                               self.sell_macd_fast, self.sell_macd_slow,
                               self.sell_band_lenght) + 10)  # make sure we ask the enough data for the indicator
@@ -105,7 +114,7 @@ class Noise(Common_stop_loss_budget_control):
 
         # Indicators calc
 
-        bbands = ta.bbands(close=data.Close, length=self.bb_band_lenght, std=self.bb_band_mult)
+        bbands = ta.bbands(close=data.Close, length=self.bb_band_length, std=self.bb_band_mult)
 
         bb_lower_band = bbands[-1:].iloc[0][0]
         bb_central_band = bbands[-1:].iloc[0][1]
@@ -124,38 +133,27 @@ class Noise(Common_stop_loss_budget_control):
         # SELL LOGIC
         # if sell condition are met sell any trade with minimal benefit
         if estimated_close_price > bb_upper_band and sell_macd_h < 0:
-            for trade in self.status.active_trades[:]:
-                if estimated_close_price > trade.entry_price * self.minimal_benefit_to_start_trailing:
-                    # sum trades to sell
-                    # is any stop loss open?
+            for trade in self.status.active_trades:
+                if estimated_close_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)):
+                    # sum trades to sell, create alist of trades to group in the sell order
+                    # is any stop loss open? => create a list of orders to cancel
+
+                    total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(estimated_close_price)
                     pass
-            # if sum_trades>0 => create market sell order or a "forced" stop loss
+
+            # if sum_trades>0 =>
             #   if stop loss are open => cancel before sell
+            #   create market sell order or a "forced" stop loss?
+            #   mark all trade with that exit order
             # check balance before?
             # what if the sell doesn't work
 
         # BUY LOGIC
-        error_on_buy = False
         if estimated_close_price < bb_central_band and buy_macd_h > 0:
-            quote_symbol = self.pair.quote
-            quote_free = balance.currencies[quote_symbol].free
+            self.buy_based_on_budget(balance, estimated_close_price, min_amount, min_cost)
 
-            amount_to_spend = min(self.budget_left_in_freq(), self.spend_on_order, quote_free)
-            amount_to_buy = amount_to_spend / estimated_close_price
-            amount_to_buy = self.amount_to_precision(amount_to_buy)
-
-            if amount_to_buy >= min_amount and amount_to_spend >= min_cost:
-                market_buy_order = self.create_market_buy_order(amount_to_buy)
-                if not market_buy_order:
-                    self._logger.error("Buy order failed!")
-                    error_on_buy = True
-            else:
-                msg = f"Not enough balance to buy min_amount/min_cost. {self.pair.base}, quote_free={quote_free}, min_amount={min_amount}, min_cost={min_cost}, amount_to_spend={amount_to_spend}, free-budget={self.status.budget.free}, estimated_close_price={estimated_close_price}"
-                self._logger.warning(msg)
-                # self._notifications_manager.medium(msg)
-                error_on_buy = True
 
         # TRAILING STOP LOGIC
-        self.manage_trailing_stop_losses(data, estimated_close_price, self.sell_band_lenght, self.sell_band_mult)
+        self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult, self.band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
 
         return self.status

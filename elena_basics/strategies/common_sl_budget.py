@@ -1,7 +1,7 @@
 import pathlib
 import time
 from os import path
-
+from elena.domain.model.balance import Balance
 from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus, BotBudget
 from elena.domain.ports.exchange_manager import ExchangeManager
@@ -16,17 +16,7 @@ import pandas as pd
 import pandas_ta as ta
 
 
-class Common_stop_loss_budget_control(GenericBot):
-    # Strict dates DCA, just buy on a regular basis.
-
-    spend_on_order: float
-    lr_buy_longitude: float
-    band_length: float
-    band_mult: float
-    band_low_pct: float
-    minimal_benefit_to_start_trailing: float
-    min_price_to_start_trailing: float
-
+class CommonStopLossBudgetControl(GenericBot):
     _logger: Logger
     _metrics_manager: MetricsManager
     _notifications_manager: NotificationsManager
@@ -98,6 +88,28 @@ class Common_stop_loss_budget_control(GenericBot):
 
         return budget_left
 
+    def buy_based_on_budget(self, balance: Balance, estimated_close_price: float, min_amount: float, min_cost: float) -> bool:
+        buy_ok = True
+        quote_symbol = self.pair.quote
+        quote_free = balance.currencies[quote_symbol].free
+
+        amount_to_spend = min(self.budget_left_in_freq(), self.spend_on_order, quote_free)
+        amount_to_buy = amount_to_spend / estimated_close_price
+        amount_to_buy = self.amount_to_precision(amount_to_buy)
+
+        if amount_to_buy >= min_amount and amount_to_spend >= min_cost:
+            market_buy_order = self.create_market_buy_order(amount_to_buy)
+            if not market_buy_order:
+                self._logger.error("Buy order failed!")
+                buy_ok = False
+        else:
+            msg = f"Not enough balance to buy min_amount/min_cost. {self.pair.base}, quote_free={quote_free}, min_amount={min_amount}, min_cost={min_cost}, amount_to_spend={amount_to_spend}, free-budget={self.status.budget.free}, estimated_close_price={estimated_close_price}"
+            self._logger.warning(msg)
+            # self._notifications_manager.medium(msg)
+            buy_ok = False
+
+        return buy_ok
+
     def _cancel_active_orders_with_lower_stop_loss(self, new_stop_loss: float) -> float:
         # Cancel any active stop order with a limit lower than the new one.
         # return the total amount of canceled orders
@@ -113,7 +125,9 @@ class Common_stop_loss_budget_control(GenericBot):
                     self._logger.error(f"Error canceling order: {order.id}.")
         return total_amount_canceled_orders, canceled_orders
 
-    def manage_trailing_stop_losses(self, data: pd.DataFrame, estimated_close_price: float, band_length: float, band_mult: float):
+    def manage_trailing_stop_losses(self, data: pd.DataFrame, estimated_close_price: float, band_length: float,
+                                    band_mult: float, band_low_pct: float, minimal_benefit_to_start_trailing: float,
+                                    min_price_to_start_trailing: float):
         # TRAILING STOP LOGIC
         # Indicator: Standard Error Bands based on DEMA
         #   new_stop_loss
@@ -126,7 +140,7 @@ class Common_stop_loss_budget_control(GenericBot):
         self._metrics_manager.gauge("new_stop_loss", self.id, new_stop_loss, ["indicator"])
 
         #   stop_price
-        stop_price = new_stop_loss * (1 - (self.band_low_pct / 100))
+        stop_price = new_stop_loss * (1 - (band_low_pct / 100))
         self._metrics_manager.gauge("stop_price", self.id, stop_price, ["indicator"])
 
         if stop_price < new_stop_loss * 0.8:
@@ -147,8 +161,7 @@ class Common_stop_loss_budget_control(GenericBot):
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades:
             if trade.exit_order_id == '0':  # TODO exit_order_id
-                if stop_price > trade.entry_price * (1 + (
-                        self.minimal_benefit_to_start_trailing / 100)) and stop_price > self.min_price_to_start_trailing:
+                if stop_price > trade.entry_price * (1 + (minimal_benefit_to_start_trailing / 100)) and stop_price > min_price_to_start_trailing:
                     trade.exit_order_id = "new_grouped_order"
                     new_trades_on_limit_amount = new_trades_on_limit_amount + trade.size
 
