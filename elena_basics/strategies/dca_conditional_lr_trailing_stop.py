@@ -82,7 +82,7 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(CommonStopLossBudgetControl):
 
         # BUY LOGIC
         if angle > 0:
-            self.buy_based_on_budget(balance, estimated_close_price, min_amount, min_cost)
+            self.buy_based_on_budget(balance, estimated_close_price, min_amount, min_cost, self.spend_on_order)
 
         # TRAILING STOP LOGIC
         self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult, self.band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)

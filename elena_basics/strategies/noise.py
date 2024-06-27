@@ -150,7 +150,7 @@ class Noise(CommonStopLossBudgetControl):
 
         # BUY LOGIC
         if estimated_close_price < bb_central_band and buy_macd_h > 0:
-            self.buy_based_on_budget(balance, estimated_close_price, min_amount, min_cost)
+            self.buy_based_on_budget(balance, estimated_close_price, min_amount, min_cost, self.spend_on_order)
 
 
         # TRAILING STOP LOGIC

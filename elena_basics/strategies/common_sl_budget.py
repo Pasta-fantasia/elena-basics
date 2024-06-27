@@ -88,12 +88,12 @@ class CommonStopLossBudgetControl(GenericBot):
 
         return budget_left
 
-    def buy_based_on_budget(self, balance: Balance, estimated_close_price: float, min_amount: float, min_cost: float) -> bool:
+    def buy_based_on_budget(self, balance: Balance, estimated_close_price: float, min_amount: float, min_cost: float, spend_on_order: float) -> bool:
         buy_ok = True
         quote_symbol = self.pair.quote
         quote_free = balance.currencies[quote_symbol].free
 
-        amount_to_spend = min(self.budget_left_in_freq(), self.spend_on_order, quote_free)
+        amount_to_spend = min(self.budget_left_in_freq(), spend_on_order, quote_free)
         amount_to_buy = amount_to_spend / estimated_close_price
         amount_to_buy = self.amount_to_precision(amount_to_buy)
 
