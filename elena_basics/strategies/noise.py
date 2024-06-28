@@ -95,11 +95,15 @@ class Noise(CommonStopLossBudgetControl):
             self._logger.error("Cannot get min_cost")
             return
 
-        estimated_close_price, order_book = self.get_estimated_last_close()
+        estimated_close_price = self.get_estimated_last_close()
         if not estimated_close_price:
             self._logger.error("Cannot get_estimated_last_close")
             return
-        estimated_sell_price = (order_book.bids[0].price + order_book.bids[1].price + order_book.bids[2].price) / 3
+
+        estimated_sell_price = self.get_estimated_sell_price()
+        if not estimated_sell_price:
+            self._logger.error("Cannot estimated_sell_price")
+            return
 
         balance = self.get_balance()
         if not balance:
@@ -109,7 +113,7 @@ class Noise(CommonStopLossBudgetControl):
         data_points = int(max(self.bb_band_length,
                               self.buy_macd_fast, self.buy_macd_fast,
                               self.sell_macd_fast, self.sell_macd_slow,
-                              self.sell_band_lenght) + 10)  # make sure we ask the enough data for the indicator
+                              self.sell_band_length) + 10)  # make sure we ask the enough data for the indicator
         data = self.read_candles(page_size=data_points)
 
         # Indicators calc
@@ -175,6 +179,6 @@ class Noise(CommonStopLossBudgetControl):
 
 
         # TRAILING STOP LOGIC
-        self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult, self.band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
+        self.manage_trailing_stop_losses(data, estimated_close_price, self.sell_band_length, self.sell_band_mult, self.sell_band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
 
         return self.status
