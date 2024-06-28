@@ -4,6 +4,7 @@ from os import path
 
 from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus, BotBudget
+from elena.domain.model.order_book import OrderBook
 from elena.domain.ports.exchange_manager import ExchangeManager
 from elena.domain.ports.logger import Logger
 from elena.domain.ports.metrics_manager import MetricsManager
@@ -94,10 +95,11 @@ class Noise(CommonStopLossBudgetControl):
             self._logger.error("Cannot get min_cost")
             return
 
-        estimated_close_price = self.get_estimated_last_close()
+        estimated_close_price, order_book = self.get_estimated_last_close()
         if not estimated_close_price:
             self._logger.error("Cannot get_estimated_last_close")
             return
+        estimated_sell_price = (order_book.bids[0].price + order_book.bids[1].price + order_book.bids[2].price) / 3
 
         balance = self.get_balance()
         if not balance:
@@ -130,14 +132,35 @@ class Noise(CommonStopLossBudgetControl):
 
         # SELL LOGIC
         # if sell condition are met sell any trade with minimal benefit
-        if estimated_close_price > bb_upper_band and sell_macd_h < 0:
+        if estimated_sell_price > bb_upper_band and sell_macd_h < 0:
+            orders_to_cancel = []
+            sell_size = 0
+            trades_to_close = []
             for trade in self.status.active_trades:
-                if estimated_close_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)):
-                    # sum trades to sell, create alist of trades to group in the sell order
+                if estimated_sell_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)):
+                    # sum trades to sell, create a list of trades to group in the sell order
                     # is any stop loss open? => create a list of orders to cancel
+                    sell_size = sell_size + trade.size
+                    trades_to_close.append(trade)
+                    if trade.exit_order_id != '0':  # TODO exit_order_id:
+                        if trade.exit_order_id not in orders_to_cancel:
+                            orders_to_cancel.append(trade.exit_order_id)
+                            # TODO: Should be checked OrderType == stop loss?
+                            #  - if it's partial?
 
-                    total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(estimated_close_price)
-                    pass
+            if sell_size > 0:
+                for order_id in orders_to_cancel:
+                    cancelled_order = self.cancel_order(order_id)
+                    if not cancelled_order:
+                        self._logger.error(f"Error canceling order: {order_id}.")
+
+                sell_order = self.create_market_sell_order(sell_size, trades_to_close)
+                sell_estimation_accuracy = sell_order.average - estimated_sell_price
+                if not sell_order:
+                    self._logger.error("Sell order failed!")
+                self._metrics_manager.gauge("estimated_sell_price", self.id, estimated_sell_price, ["indicator"])
+                self._metrics_manager.gauge("sell_order_average", self.id, sell_order.average, ["indicator"])
+                self._metrics_manager.gauge("sell_estimation_accuracy", self.id, sell_estimation_accuracy, ["indicator"])
 
             # if sum_trades>0 =>
             #   if stop loss are open => cancel before sell

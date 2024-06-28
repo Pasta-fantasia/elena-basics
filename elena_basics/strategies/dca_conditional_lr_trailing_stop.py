@@ -1,6 +1,7 @@
 import pathlib
 import time
 from os import path
+from typing import List
 
 from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus, BotBudget
