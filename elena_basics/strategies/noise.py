@@ -4,6 +4,7 @@ from os import path
 
 from elena.domain.model.bot_config import BotConfig
 from elena.domain.model.bot_status import BotStatus, BotBudget
+from elena.domain.model.order import OrderStatusType
 from elena.domain.model.order_book import OrderBook
 from elena.domain.ports.exchange_manager import ExchangeManager
 from elena.domain.ports.logger import Logger
@@ -159,12 +160,20 @@ class Noise(CommonStopLossBudgetControl):
                         self._logger.error(f"Error canceling order: {order_id}.")
 
                 sell_order = self.create_market_sell_order(sell_size, trades_to_close)
-                sell_estimation_accuracy = sell_order.average - estimated_sell_price
+
                 if not sell_order:
+                    self._metrics_manager.gauge("estimated_sell_price", self.id, estimated_sell_price, ["indicator"])
+
+                    if sell_order.status == OrderStatusType.closed:
+                        sell_estimation_accuracy = sell_order.average - estimated_sell_price
+                        self._metrics_manager.gauge("sell_order_average", self.id, sell_order.average, ["indicator"])
+                        self._metrics_manager.gauge("sell_estimation_accuracy", self.id, sell_estimation_accuracy, ["indicator"])
+                    else:
+                        self._logger.error(f"Sell order not closed! Order status = {sell_order.status}")
+
+                else:
                     self._logger.error("Sell order failed!")
-                self._metrics_manager.gauge("estimated_sell_price", self.id, estimated_sell_price, ["indicator"])
-                self._metrics_manager.gauge("sell_order_average", self.id, sell_order.average, ["indicator"])
-                self._metrics_manager.gauge("sell_estimation_accuracy", self.id, sell_estimation_accuracy, ["indicator"])
+
 
             # if sum_trades>0 =>
             #   if stop loss are open => cancel before sell
