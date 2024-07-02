@@ -101,7 +101,7 @@ class Noise(CommonStopLossBudgetControl):
             self._logger.error("Cannot get_estimated_last_close")
             return
 
-        estimated_sell_price = self.get_estimated_sell_price()
+        estimated_sell_price = self.get_estimated_sell_price_from_cache()
         if not estimated_sell_price:
             self._logger.error("Cannot estimated_sell_price")
             return
@@ -173,6 +173,7 @@ class Noise(CommonStopLossBudgetControl):
 
                 else:
                     self._logger.error("Sell order failed!")
+                    self._logger.error(f"{sell_order}")
 
 
             # if sum_trades>0 =>
