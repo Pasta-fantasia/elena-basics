@@ -85,15 +85,15 @@ Strategies:
         exchange: binance
         time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
         cron_expression: "* * * * *" # At every minute
-        budget_limit: 100.0 # Buy up to 2000 UDST
+        budget_limit: 500.0 # Buy up to 2000 UDST
         pct_reinvest_profit: 0.0 # reinvest all profits
         tags:
           - Noise
           - ranging
         config:
           spend_on_order: 100.0 # spend 100 USDT on every cycle
-          daily_budget: 100.0 # spend 200 USDT per day
-          weekly_budget: 100.0 # spend 1000 USDT per week
+          daily_budget: 500.0 # spend 200 USDT per day
+          weekly_budget: 500.0 # spend 1000 USDT per week
           spent_times_shift: "+5 hours"
 
           bb_band_length: 3

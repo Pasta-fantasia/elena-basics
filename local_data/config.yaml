@@ -3,7 +3,7 @@ Logger:
   level: INFO
   path: logs  # relative path under home directory
   max_bytes: 1000000 # 1 MB max log files size
-  backup_count: 6  # Number of log backup files
+  backup_count: 1000  # Number of log backup files
 MetricsManager:
   class: elena.adapters.metrics_manager.local_metrics_manager.LocalMetricsManager
 NotificationsManager:
