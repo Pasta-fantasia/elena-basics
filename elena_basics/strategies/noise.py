@@ -162,8 +162,6 @@ class Noise(CommonStopLossBudgetControl):
                 sell_order = self.create_market_sell_order(sell_size, trades_to_close)
 
                 if sell_order:
-                    self._metrics_manager.gauge("estimated_sell_price", self.id, estimated_sell_price, ["indicator"])
-
                     if sell_order.status == OrderStatusType.closed:
                         sell_estimation_accuracy = sell_order.average - estimated_sell_price
                         self._metrics_manager.gauge("sell_order_average", self.id, sell_order.average, ["indicator"])
