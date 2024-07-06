@@ -1,4 +1,41 @@
+Tags:
+  - id: bear
+    enabled: true
+  - id: bull
+    enabled: true
+  - id: ranging
+    enabled: true
+  - id: Noise
+    enabled: true
+
+
 Strategies:
+  - id: TrailingStopLoss
+    name: TrailingStopLoss
+    enabled: false
+    strategy_class: elena_basics.strategies.trailing_stop.TrailingStopLoss
+
+    bots:
+      - id: ETH_USDT_1
+        name: TrailingStopLoss BTC/USDT
+        enabled: true
+        pair: ETH/USDT
+        exchange: binance
+        time_frame: 1m # Valid values: 1m, 1m, 1d, 1M, 1y
+        cron_expression: "* * * * *"
+        budget_limit: 0.0 # don't control budget
+        pct_reinvest_profit: 100.0 # reinvest all profits
+        tags:
+          - TrailingStopLoss
+          - bear
+        config:
+          band_length: 34
+          band_mult: 2
+          band_low_pct: 1
+          min_price_to_start_trailing: 1900 # start trailing when price is higher than 1900
+          minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
+          asset_to_manage: 100%
+
   - id: DCA_Strict
     name: DCA_Strict
     enabled: false
@@ -10,7 +47,7 @@ Strategies:
         enabled: false
         pair: BTC/USDT
         exchange: binance
-        time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
+        time_frame: 1m # Valid values: 1m, 1m, 1d, 1M, 1y
         cron_expression: "*/5 * * * *" # At every 5th minute
         budget_limit: 600.0 # Buy up to 600 UDST
         pct_reinvest_profit: 100.0 # reinvest all profits
@@ -31,7 +68,7 @@ Strategies:
         enabled: false
         pair: BTC/USDT
         exchange: binance
-        time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
+        time_frame: 1m # Valid values: 1m, 1m, 1d, 1M, 1y
         cron_expression: "*/5 * * * *" # At every 5th minute
         budget_limit: 1600.0 # Buy up to 1600 UDST
         pct_reinvest_profit: 100.0 # reinvest all profits
@@ -53,7 +90,7 @@ Strategies:
         enabled: true
         pair: BTC/USDT
         exchange: binance
-        time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
+        time_frame: 1m # Valid values: 1m, 1m, 1d, 1M, 1y
         cron_expression: "* * * * *" # At every minute
         budget_limit: 9000.0 # Buy up to 2000 UDST
         pct_reinvest_profit: 50.0 # reinvest all profits
@@ -83,17 +120,17 @@ Strategies:
         enabled: true
         pair: ONG/USDT
         exchange: binance
-        time_frame: 1m # Valid values: 1m, 1h, 1d, 1M, 1y
+        time_frame: 1m # Valid values: 1m, 1m, 1d, 1M, 1y
         cron_expression: "* * * * *" # At every minute
-        budget_limit: 500.0 # Buy up to 2000 UDST
+        budget_limit: 10000.0 # Buy up to 2000 UDST
         pct_reinvest_profit: 0.0 # reinvest all profits
         tags:
           - Noise
           - ranging
         config:
           spend_on_order: 100.0 # spend 100 USDT on every cycle
-          daily_budget: 500.0 # spend 200 USDT per day
-          weekly_budget: 500.0 # spend 1000 USDT per week
+          daily_budget: 4000.0 # spend 200 USDT per day
+          weekly_budget: 4000.0 # spend 1000 USDT per week
           spent_times_shift: "+5 hours"
 
           bb_band_length: 3
@@ -116,37 +153,163 @@ Strategies:
           min_price_to_start_trailing: 0 # start trailing when price is higher % minimal benefit only
           minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
 
-  - id: TrailingStopLoss
-    name: TrailingStopLoss
-    enabled: false
-    strategy_class: elena_basics.strategies.trailing_stop.TrailingStopLoss
 
-    bots:
-      - id: ETH_USDT_1
-        name: TrailingStopLoss BTC/USDT
+
+      - id: Noise_FARM-USDT_3-0_2-0_21-0_2-0_8-0_13-0_21-0
+        name: Noise FARM/USDT
         enabled: true
-        pair: ETH/USDT
+        pair: FARM/USDT
         exchange: binance
-        time_frame: 1h # Valid values: 1m, 1h, 1d, 1M, 1y
+        time_frame: 1m
         cron_expression: "* * * * *"
-        budget_limit: 0.0 # don't control budget
-        pct_reinvest_profit: 100.0 # reinvest all profits
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
         tags:
-          - TrailingStopLoss
-          - bear
+          - Noise
+          - last_year_three_month
         config:
-          band_length: 34
-          band_mult: 2
-          band_low_pct: 1
-          min_price_to_start_trailing: 1900 # start trailing when price is higher than 1900
-          minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
-          asset_to_manage: 100%
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 21.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
 
 
-Tags:
-  - id: bear
-    enabled: true
-  - id: bull
-    enabled: true
-  - id: ranging
-    enabled: true
+      - id: Noise_FARM-USDT_3-0_2-0_21-0_2-0_8-0_21-0_13-0
+        name: Noise FARM/USDT
+        enabled: true
+        pair: FARM/USDT
+        exchange: binance
+        time_frame: 1m
+        cron_expression: "* * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year_three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 21.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_ONT-USDT_3-0_21-0_55-0_21-0_8-0_21-0_13-0
+        name: Noise ONT/USDT
+        enabled: true
+        pair: ONT/USDT
+        exchange: binance
+        time_frame: 1m
+        cron_expression: "* * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year_three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 21.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 21.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 21.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_ONT-USDT_3-0_21-0_55-0_21-0_8-0_13-0_21-0
+        name: Noise ONT/USDT
+        enabled: true
+        pair: ONT/USDT
+        exchange: binance
+        time_frame: 1m
+        cron_expression: "* * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year_three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 21.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 21.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 21.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+
+
+
+
+
+
+
+
+
+
