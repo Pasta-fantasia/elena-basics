@@ -111,9 +111,12 @@ class Noise(CommonStopLossBudgetControl):
             self._logger.error("Cannot get balance")
             return
 
+        # https://github.com/twopirllc/pandas-ta/issues/523
+        # In this case, macd aborts further calculation since close.size < slow + signal - 1 (32 < 26 + 9 - 1 = 34)
+
         data_points = int(max(self.bb_band_length,
-                              self.buy_macd_fast, self.buy_macd_fast,
-                              self.sell_macd_fast, self.sell_macd_slow,
+                              self.buy_macd_fast, self.buy_macd_slow, self.buy_macd_slow + self.buy_macd_signal,
+                              self.sell_macd_fast, self.sell_macd_slow,  self.sell_macd_slow + self.sell_macd_signal,
                               self.sell_band_length) + 10)  # make sure we ask the enough data for the indicator
         data = self.read_candles(page_size=data_points)
 

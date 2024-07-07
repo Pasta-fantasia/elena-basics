@@ -115,53 +115,273 @@ Strategies:
     strategy_class: elena_basics.strategies.noise.Noise
 
     bots:
-      - id: Noise_ONG_USDT_1
-        name: Noise ONG/USDT
+
+      - id: Noise_BB-USDT_3-0_2-0_55-0_55-0_2-0_21-0_21-0 # Expected Return: 88.32319360760489 Avg. Trade Duration 3.208333333333333
+        name: Noise BB/USDT
         enabled: true
-        pair: ONG/USDT
+        pair: BB/USDT
         exchange: binance
-        time_frame: 1m # Valid values: 1m, 1m, 1d, 1M, 1y
-        cron_expression: "* * * * *" # At every minute
-        budget_limit: 10000.0 # Buy up to 2000 UDST
-        pct_reinvest_profit: 0.0 # reinvest all profits
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
         tags:
           - Noise
-          - ranging
+          - last_year
         config:
-          spend_on_order: 100.0 # spend 100 USDT on every cycle
-          daily_budget: 4000.0 # spend 200 USDT per day
-          weekly_budget: 4000.0 # spend 1000 USDT per week
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
           spent_times_shift: "+5 hours"
 
-          bb_band_length: 3
+          bb_band_length: 3.0
           bb_band_mult: 1
 
-          # 21.0,55.0,21.0
-          buy_macd_fast: 2
-          buy_macd_slow: 21
-          buy_macd_signal: 21
+          buy_macd_fast: 2.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 55.0
 
-          # 8.0,21.0,21.0
-          sell_macd_fast: 8
-          sell_macd_slow: 21
-          sell_macd_signal: 21
+          sell_macd_fast: 2.0
+          sell_macd_slow: 21.0
+          sell_macd_signal: 21.0
 
           sell_band_length: 34
           sell_band_mult: 1
-          sell_band_low_pct: 1
+          sell_band_low_pct: 1.5
 
-          min_price_to_start_trailing: 0 # start trailing when price is higher % minimal benefit only
-          minimal_benefit_to_start_trailing: 0.3 # % minimal benefit, expressed as 5%, but minimal could be 0.3%
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
 
 
+      - id: Noise_BNB-USDT_3-0_21-0_55-0_55-0_2-0_21-0_13-0 # Expected Return: 7.947539068087122 Avg. Trade Duration 4.875
+        name: Noise BNB/USDT
+        enabled: true
+        pair: BNB/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
 
-      - id: Noise_FARM-USDT_3-0_2-0_21-0_2-0_8-0_13-0_21-0
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 21.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 55.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 21.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.4
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_BNB-USDT_3-0_21-0_55-0_55-0_8-0_21-0_13-0 # Expected Return: 84.06401871484229 Avg. Trade Duration 5.958333333333333
+        name: Noise BNB/USDT
+        enabled: true
+        pair: BNB/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 21.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 55.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 21.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.4
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_COS-USDT_3-0_2-0_21-0_2-0_2-0_21-0_21-0 # Expected Return: 127.3659979650788 Avg. Trade Duration 9.208333333333334
+        name: Noise COS/USDT
+        enabled: true
+        pair: COS/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 21.0
+          sell_macd_signal: 21.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_COS-USDT_3-0_2-0_55-0_55-0_8-0_13-0_13-0 # Expected Return: 59.75976852058204 Avg. Trade Duration 7.75
+        name: Noise COS/USDT
+        enabled: true
+        pair: COS/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 55.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 1.1
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_FARM-USDT_3-0_2-0_21-0_2-0_8-0_13-0_13-0 # Expected Return: 81.36745797848258 Avg. Trade Duration 10.625
         name: Noise FARM/USDT
         enabled: true
         pair: FARM/USDT
         exchange: binance
-        time_frame: 1m
-        cron_expression: "* * * * *"
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 1.0
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_FARM-USDT_3-0_2-0_21-0_2-0_8-0_13-0_2-0 # Expected Return: 135.9042258340649 Avg. Trade Duration 20.45833333333333
+        name: Noise FARM/USDT
+        enabled: true
+        pair: FARM/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 2.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_FARM-USDT_3-0_2-0_21-0_2-0_8-0_13-0_21-0 # Expected Return: 150.7521143475407 Avg. Trade Duration 12.20833333333333
+        name: Noise FARM/USDT
+        enabled: true
+        pair: FARM/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
         budget_limit: 100.0
         pct_reinvest_profit: 0.0
         tags:
@@ -192,13 +412,13 @@ Strategies:
           minimal_benefit_to_start_trailing: 0.3
 
 
-      - id: Noise_FARM-USDT_3-0_2-0_21-0_2-0_8-0_21-0_13-0
+      - id: Noise_FARM-USDT_3-0_2-0_21-0_2-0_8-0_21-0_13-0 # Expected Return: 150.7521143475407 Avg. Trade Duration 12.20833333333333
         name: Noise FARM/USDT
         enabled: true
         pair: FARM/USDT
         exchange: binance
-        time_frame: 1m
-        cron_expression: "* * * * *"
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
         budget_limit: 100.0
         pct_reinvest_profit: 0.0
         tags:
@@ -229,13 +449,235 @@ Strategies:
           minimal_benefit_to_start_trailing: 0.3
 
 
-      - id: Noise_ONT-USDT_3-0_21-0_55-0_21-0_8-0_21-0_13-0
+      - id: Noise_HBAR-USDT_3-0_2-0_21-0_21-0_2-0_13-0_21-0 # Expected Return: 104.8789733609825 Avg. Trade Duration 9.916666666666666
+        name: Noise HBAR/USDT
+        enabled: true
+        pair: HBAR/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 21.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 21.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_HBAR-USDT_3-0_2-0_21-0_21-0_2-0_21-0_2-0 # Expected Return: 26.99075774122393 Avg. Trade Duration 21.33333333333333
+        name: Noise HBAR/USDT
+        enabled: true
+        pair: HBAR/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 21.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 21.0
+          sell_macd_signal: 2.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_HIGH-USDT_13-0_2-0_21-0_2-0_2-0_8-0_13-0 # Expected Return: 13.050727936145 Avg. Trade Duration 5.458333333333333
+        name: Noise HIGH/USDT
+        enabled: true
+        pair: HIGH/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 13.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 8.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 1.2
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_HIGH-USDT_13-0_21-0_55-0_55-0_2-0_13-0_21-0 # Expected Return: 121.2558100358939 Avg. Trade Duration 6.833333333333333
+        name: Noise HIGH/USDT
+        enabled: true
+        pair: HIGH/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 13.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 21.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 55.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 21.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.9
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_ONT-USDT_3-0_21-0_55-0_21-0_2-0_21-0_21-0 # Expected Return: 72.88709012537275 Avg. Trade Duration 10.54166666666667
         name: Noise ONT/USDT
         enabled: true
         pair: ONT/USDT
         exchange: binance
-        time_frame: 1m
-        cron_expression: "* * * * *"
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 21.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 21.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 21.0
+          sell_macd_signal: 21.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_ONT-USDT_3-0_21-0_55-0_21-0_8-0_13-0_21-0 # Expected Return: 109.4403104598507 Avg. Trade Duration 7.875
+        name: Noise ONT/USDT
+        enabled: true
+        pair: ONT/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year_three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 21.0
+          buy_macd_slow: 55.0
+          buy_macd_signal: 21.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 21.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_ONT-USDT_3-0_21-0_55-0_21-0_8-0_21-0_13-0 # Expected Return: 109.4403104598507 Avg. Trade Duration 7.875
+        name: Noise ONT/USDT
+        enabled: true
+        pair: ONT/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
         budget_limit: 100.0
         pct_reinvest_profit: 0.0
         tags:
@@ -266,18 +708,129 @@ Strategies:
           minimal_benefit_to_start_trailing: 0.3
 
 
-      - id: Noise_ONT-USDT_3-0_21-0_55-0_21-0_8-0_13-0_21-0
-        name: Noise ONT/USDT
+      - id: Noise_PAXG-USDT_3-0_2-0_21-0_2-0_8-0_13-0_13-0 # Expected Return: 6.377342234207731 Avg. Trade Duration 14.125
+        name: Noise PAXG/USDT
         enabled: true
-        pair: ONT/USDT
+        pair: PAXG/USDT
         exchange: binance
-        time_frame: 1m
-        cron_expression: "* * * * *"
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
         budget_limit: 100.0
         pct_reinvest_profit: 0.0
         tags:
           - Noise
-          - last_year_three_month
+          - three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.2
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_PAXG-USDT_3-0_2-0_21-0_21-0_8-0_13-0_13-0 # Expected Return: 20.21333224177106 Avg. Trade Duration 13.04166666666667
+        name: Noise PAXG/USDT
+        enabled: true
+        pair: PAXG/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 3.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 21.0
+
+          sell_macd_fast: 8.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.2
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_PEOPLE-USDT_13-0_2-0_21-0_2-0_2-0_8-0_21-0 # Expected Return: 84.9673235173259 Avg. Trade Duration 6.916666666666667
+        name: Noise PEOPLE/USDT
+        enabled: true
+        pair: PEOPLE/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 13.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 8.0
+          sell_macd_signal: 21.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 1.3
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_PEOPLE-USDT_3-0_21-0_55-0_55-0_2-0_13-0_13-0 # Expected Return: 342.807217008372 Avg. Trade Duration 8.5
+        name: Noise PEOPLE/USDT
+        enabled: true
+        pair: PEOPLE/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
         config:
           spend_on_order: 1000
           daily_budget: 1000
@@ -289,11 +842,85 @@ Strategies:
 
           buy_macd_fast: 21.0
           buy_macd_slow: 55.0
-          buy_macd_signal: 21.0
+          buy_macd_signal: 55.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 13.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 1.0
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_RVN-USDT_13-0_2-0_21-0_2-0_2-0_13-0_2-0 # Expected Return: 0.9852496679409115 Avg. Trade Duration 5.833333333333333
+        name: Noise RVN/USDT
+        enabled: true
+        pair: RVN/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - three_month
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 13.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
+
+          sell_macd_fast: 2.0
+          sell_macd_slow: 13.0
+          sell_macd_signal: 2.0
+
+          sell_band_length: 34
+          sell_band_mult: 1
+          sell_band_low_pct: 0.7
+
+          min_price_to_start_trailing: 0.0
+          minimal_benefit_to_start_trailing: 0.3
+
+
+      - id: Noise_RVN-USDT_13-0_2-0_21-0_2-0_8-0_13-0_2-0 # Expected Return: 62.12925602807324 Avg. Trade Duration 23.75
+        name: Noise RVN/USDT
+        enabled: true
+        pair: RVN/USDT
+        exchange: binance
+        time_frame: 1h
+        cron_expression: "*/15 * * * *"
+        budget_limit: 100.0
+        pct_reinvest_profit: 0.0
+        tags:
+          - Noise
+          - last_year
+        config:
+          spend_on_order: 1000
+          daily_budget: 1000
+          weekly_budget: 1000
+          spent_times_shift: "+5 hours"
+
+          bb_band_length: 13.0
+          bb_band_mult: 1
+
+          buy_macd_fast: 2.0
+          buy_macd_slow: 21.0
+          buy_macd_signal: 2.0
 
           sell_macd_fast: 8.0
           sell_macd_slow: 13.0
-          sell_macd_signal: 21.0
+          sell_macd_signal: 2.0
 
           sell_band_length: 34
           sell_band_mult: 1
