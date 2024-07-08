@@ -159,12 +159,13 @@ class Noise(CommonStopLossBudgetControl):
             if sell_size > 0:
                 # verify balance
                 base_symbol = self.pair.base
+                # poner una sell size mayor para forzar la lógica
                 base_free = balance.currencies[base_symbol].free
                 max_sell = min(sell_size, base_free)
                 if max_sell < sell_size:
                     sale_diff = sell_size - max_sell
                     trade = trades_to_close[0]
-                    self._logger.error(f"Selling too much, balance is {max_sell} but trying to sell {sell_size}. Trade ID: {trade.id}, {trade.size} changed to {trade.size - sale_diff}")
+                    self._logger.error(f"Selling too much, balance is {max_sell} but trying to sell {sell_size}. Trade ID: {trade.id}, size {trade.size} changed to {trade.size - sale_diff}")
                     trade.size = trade.size - sale_diff
                     sell_size = max_sell
 
