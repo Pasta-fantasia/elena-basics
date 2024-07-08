@@ -142,7 +142,7 @@ class Noise(CommonStopLossBudgetControl):
         # if sell condition are met sell any trade with minimal benefit
         if estimated_sell_price > bb_upper_band and sell_macd_h < 0:
             orders_to_cancel = []
-            sell_size = 0
+            sell_size = 0.0
             trades_to_close = []
             for trade in self.status.active_trades:
                 if estimated_sell_price > trade.entry_price * (1 + (self.minimal_benefit_to_start_trailing / 100)):
@@ -157,6 +157,17 @@ class Noise(CommonStopLossBudgetControl):
                             #  - if it's partial?
 
             if sell_size > 0:
+                # verify balance
+                base_symbol = self.pair.base
+                base_free = balance.currencies[base_symbol].free
+                max_sell = min(sell_size, base_free)
+                if max_sell < sell_size:
+                    sale_diff = sell_size - max_sell
+                    trade = trades_to_close[0]
+                    self._logger.error(f"Selling too much, balance is {max_sell} but trying to sell {sell_size}. Trade ID: {trade.id}, {trade.size} changed to {trade.size - sale_diff}")
+                    trade.size = trade.size - sale_diff
+                    sell_size = max_sell
+
                 for order_id in orders_to_cancel:
                     cancelled_order = self.cancel_order(order_id)
                     if not cancelled_order:

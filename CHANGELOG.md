@@ -1,3 +1,6 @@
+# 0.1.2
+- fix: [ERROR] Error creating market sell order: binance Account has insufficient balance for requested action. #14
+
 # 0.1.1
 - fix: insufficient data_point for macd indicator
 
