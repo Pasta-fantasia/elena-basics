@@ -74,6 +74,9 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(CommonStopLossBudgetControl):
             self._logger.error("Cannot get balance")
             return
 
+        base_symbol = self.pair.base
+        base_free = balance.currencies[base_symbol].free
+
         data_points = int(max(self.lr_buy_longitude,self.band_length) + 10)  # make sure we ask the enough data for the indicator
         data = self.read_candles(page_size=data_points)
 
@@ -86,6 +89,6 @@ class DCA_Conditional_Buy_LR_with_TrailingStop(CommonStopLossBudgetControl):
             self.buy_based_on_budget(balance, estimated_close_price, min_amount, min_cost, self.spend_on_order)
 
         # TRAILING STOP LOGIC
-        self.manage_trailing_stop_losses(data, estimated_close_price, self.band_length, self.band_mult, self.band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
+        self.manage_trailing_stop_losses(data, estimated_close_price, base_free, self.band_length, self.band_mult, self.band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
 
         return self.status

@@ -111,6 +111,9 @@ class Noise(CommonStopLossBudgetControl):
             self._logger.error("Cannot get balance")
             return
 
+        base_symbol = self.pair.base
+        base_free = balance.currencies[base_symbol].free
+
         # https://github.com/twopirllc/pandas-ta/issues/523
         # In this case, macd aborts further calculation since close.size < slow + signal - 1 (32 < 26 + 9 - 1 = 34)
 
@@ -158,15 +161,12 @@ class Noise(CommonStopLossBudgetControl):
 
             if sell_size > 0:
                 # verify balance
-                base_symbol = self.pair.base
-                # poner una sell size mayor para forzar la lógica
-                base_free = balance.currencies[base_symbol].free
                 max_sell = min(sell_size, base_free)
                 if max_sell < sell_size:
                     sale_diff = sell_size - max_sell
                     trade = trades_to_close[0]
                     self._logger.error(f"Selling too much, balance is {max_sell} but trying to sell {sell_size}. Trade ID: {trade.id}, size {trade.size} changed to {trade.size - sale_diff}")
-                    trade.size = trade.size - sale_diff
+                    trade.size = self.amount_to_precision(trade.size - sale_diff)
                     sell_size = max_sell
 
                 for order_id in orders_to_cancel:
@@ -202,6 +202,6 @@ class Noise(CommonStopLossBudgetControl):
 
 
         # TRAILING STOP LOGIC
-        self.manage_trailing_stop_losses(data, estimated_close_price, self.sell_band_length, self.sell_band_mult, self.sell_band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
+        self.manage_trailing_stop_losses(data, estimated_close_price, base_free, self.sell_band_length, self.sell_band_mult, self.sell_band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
 
         return self.status
