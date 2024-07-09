@@ -1,3 +1,6 @@
+# 0.1.4
+- fix: [ERROR] Can't create stop loss grouped_amount_canceled_orders_and_new_trades #16. Balance check before sells.
+
 # 0.1.3
 - fix: [ERROR] Can't create stop loss grouped_amount_canceled_orders_and_new_trades #16
 
