@@ -152,6 +152,11 @@ class Noise(CommonStopLossBudgetControl):
                             #  - if it's partial?
 
             if sell_size > 0:
+                for order_id in orders_to_cancel:
+                    cancelled_order = self.cancel_order(order_id)
+                    if not cancelled_order:
+                        self._logger.error(f"Error canceling order: {order_id}.")
+
                 # verify balance, it needs to be checked after any cancellation
                 balance = self.get_balance()
                 if not balance:
@@ -169,10 +174,7 @@ class Noise(CommonStopLossBudgetControl):
                     trade.size = self.amount_to_precision(trade.size - sale_diff)
                     sell_size = max_sell
 
-                for order_id in orders_to_cancel:
-                    cancelled_order = self.cancel_order(order_id)
-                    if not cancelled_order:
-                        self._logger.error(f"Error canceling order: {order_id}.")
+
 
                 sell_order = self.create_market_sell_order(sell_size, trades_to_close)
 
