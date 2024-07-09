@@ -174,8 +174,6 @@ class Noise(CommonStopLossBudgetControl):
                     trade.size = self.amount_to_precision(trade.size - sale_diff)
                     sell_size = max_sell
 
-
-
                 sell_order = self.create_market_sell_order(sell_size, trades_to_close)
 
                 if sell_order:
