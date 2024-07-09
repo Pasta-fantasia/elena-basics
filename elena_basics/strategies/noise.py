@@ -106,14 +106,6 @@ class Noise(CommonStopLossBudgetControl):
             self._logger.error("Cannot estimated_sell_price")
             return
 
-        balance = self.get_balance()
-        if not balance:
-            self._logger.error("Cannot get balance")
-            return
-
-        base_symbol = self.pair.base
-        base_free = balance.currencies[base_symbol].free
-
         # https://github.com/twopirllc/pandas-ta/issues/523
         # In this case, macd aborts further calculation since close.size < slow + signal - 1 (32 < 26 + 9 - 1 = 34)
 
@@ -160,7 +152,15 @@ class Noise(CommonStopLossBudgetControl):
                             #  - if it's partial?
 
             if sell_size > 0:
-                # verify balance
+                # verify balance, it needs to be checked after any cancellation
+                balance = self.get_balance()
+                if not balance:
+                    self._logger.error("Cannot get balance")
+                    return
+
+                base_symbol = self.pair.base
+                base_free = balance.currencies[base_symbol].free
+
                 max_sell = min(sell_size, base_free)
                 if max_sell < sell_size:
                     sale_diff = sell_size - max_sell
@@ -198,10 +198,14 @@ class Noise(CommonStopLossBudgetControl):
 
         # BUY LOGIC
         if estimated_close_price < bb_central_band and buy_macd_h > 0:
+            balance = self.get_balance()
+            if not balance:
+                self._logger.error("Cannot get balance")
+                return
             self.buy_based_on_budget(balance, estimated_close_price, min_amount, min_cost, self.spend_on_order)
 
 
         # TRAILING STOP LOGIC
-        self.manage_trailing_stop_losses(data, estimated_close_price, base_free, self.sell_band_length, self.sell_band_mult, self.sell_band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
+        self.manage_trailing_stop_losses(data, estimated_close_price, self.sell_band_length, self.sell_band_mult, self.sell_band_low_pct, self.minimal_benefit_to_start_trailing, self.min_price_to_start_trailing)
 
         return self.status

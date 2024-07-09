@@ -125,7 +125,7 @@ class CommonStopLossBudgetControl(GenericBot):
                     self._logger.error(f"Error canceling order: {order.id}.")
         return total_amount_canceled_orders, canceled_orders
 
-    def manage_trailing_stop_losses(self, data: pd.DataFrame, estimated_close_price: float, base_free: float, band_length: float,
+    def manage_trailing_stop_losses(self, data: pd.DataFrame, estimated_close_price: float, band_length: float,
                                     band_mult: float, band_low_pct: float, minimal_benefit_to_start_trailing: float,
                                     min_price_to_start_trailing: float):
         # TRAILING STOP LOGIC
@@ -167,7 +167,15 @@ class CommonStopLossBudgetControl(GenericBot):
         grouped_amount_canceled_orders_and_new_trades = total_amount_canceled_orders + new_trades_on_limit_amount
 
         if grouped_amount_canceled_orders_and_new_trades >= self.limit_min_amount():
-            # verify balance
+            # verify balance, it needs to be checked after any cancellation
+            balance = self.get_balance()
+            if not balance:
+                self._logger.error("Cannot get balance")
+                return
+
+            base_symbol = self.pair.base
+            base_free = balance.currencies[base_symbol].free
+
             max_sell = min(grouped_amount_canceled_orders_and_new_trades, base_free)
             if max_sell < grouped_amount_canceled_orders_and_new_trades:
                 sale_diff = grouped_amount_canceled_orders_and_new_trades - max_sell
