@@ -1,3 +1,6 @@
+# 0.1.3
+- fix: [ERROR] Can't create stop loss grouped_amount_canceled_orders_and_new_trades #16
+
 # 0.1.2
 - fix: [ERROR] Error creating market sell order: binance Account has insufficient balance for requested action. #14
 

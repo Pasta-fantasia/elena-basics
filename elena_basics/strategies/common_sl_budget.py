@@ -125,7 +125,7 @@ class CommonStopLossBudgetControl(GenericBot):
                     self._logger.error(f"Error canceling order: {order.id}.")
         return total_amount_canceled_orders, canceled_orders
 
-    def manage_trailing_stop_losses(self, data: pd.DataFrame, estimated_close_price: float, band_length: float,
+    def manage_trailing_stop_losses(self, data: pd.DataFrame, estimated_close_price: float, base_free: float, band_length: float,
                                     band_mult: float, band_low_pct: float, minimal_benefit_to_start_trailing: float,
                                     min_price_to_start_trailing: float):
         # TRAILING STOP LOGIC
@@ -144,14 +144,12 @@ class CommonStopLossBudgetControl(GenericBot):
         self._metrics_manager.gauge("stop_price", self.id, stop_price, ["indicator"])
 
         if stop_price < new_stop_loss * 0.8:
-            self._logger.error(
-                f"price ({stop_price}) is too far from new_stop_loss({new_stop_loss}) it may happend on test envs.")
+            self._logger.error(f"price ({stop_price}) is too far from new_stop_loss({new_stop_loss}) it may happend on test envs.")
             new_stop_loss = 0
             stop_price = 0
 
         if new_stop_loss > estimated_close_price:
-            self._logger.warning(
-                f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
+            self._logger.warning(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
             new_stop_loss = 0
             stop_price = 0
 
@@ -169,8 +167,16 @@ class CommonStopLossBudgetControl(GenericBot):
         grouped_amount_canceled_orders_and_new_trades = total_amount_canceled_orders + new_trades_on_limit_amount
 
         if grouped_amount_canceled_orders_and_new_trades >= self.limit_min_amount():
-            new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades, stop_price=new_stop_loss,
-                                       price=stop_price)
+            # verify balance
+            max_sell = min(grouped_amount_canceled_orders_and_new_trades, base_free)
+            if max_sell < grouped_amount_canceled_orders_and_new_trades:
+                sale_diff = grouped_amount_canceled_orders_and_new_trades - max_sell
+                self._logger.error(f"Stop loss amount is higher than balance. Balance: {max_sell} but trying to sell {grouped_amount_canceled_orders_and_new_trades}.")
+                grouped_amount_canceled_orders_and_new_trades = max_sell
+            else:
+                sale_diff = 0.0
+
+            new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades, stop_price=new_stop_loss,price=stop_price)
 
             if new_order:
                 canceled_orders.append("new_grouped_order")
@@ -180,6 +186,13 @@ class CommonStopLossBudgetControl(GenericBot):
                     if trade.exit_order_id in canceled_orders:
                         trade.exit_order_id = new_order.id
                         trade.exit_price = new_stop_loss  # not real until the stop loss really executes.
+                        if sale_diff > 0:
+                            if trade.size >= sale_diff:
+                                self._logger.error(f"Trade ID: {trade.id}, size {trade.size} changed to {trade.size - sale_diff}")
+                                trade.size = self.amount_to_precision(trade.size - sale_diff)
+                                sale_diff = 0.0
+                if sale_diff > 0:
+                    self._logger.error(f"After checking all trades {sale_diff} was higher than any trade... that's not a rounding problem.")
             else:
                 # TODO
                 self._logger.error("Can't create stop loss grouped_amount_canceled_orders_and_new_trades ")
