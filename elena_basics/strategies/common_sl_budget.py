@@ -145,13 +145,13 @@ class CommonStopLossBudgetControl(GenericBot):
 
         if stop_price < new_stop_loss * 0.8:
             self._logger.error(f"price ({stop_price}) is too far from new_stop_loss({new_stop_loss}) it may happend on test envs.")
-            new_stop_loss = 0
-            stop_price = 0
+            new_stop_loss = 0.0
+            stop_price = 0.0
 
-        if new_stop_loss > estimated_close_price:
-            self._logger.warning(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
-            new_stop_loss = 0
-            stop_price = 0
+        if stop_price > estimated_close_price:
+            self._logger.warning(f"new_stop_loss ({stop_price}) should be never higher than last_close({estimated_close_price})")
+            new_stop_loss = 0.0
+            stop_price = 0.0
 
         total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(new_stop_loss)
         new_trades_on_limit_amount = 0

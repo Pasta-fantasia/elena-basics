@@ -1,3 +1,6 @@
+# 0.1.6
+- fix: [ERROR] Error creating stop loss: binance Stop price would trigger immediately.
+
 # 0.1.5
 - fix: [ERROR] Can't create stop loss grouped_amount_canceled_orders_and_new_trades #16. Cancel, balance check, sells.
 
