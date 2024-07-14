@@ -148,7 +148,7 @@ class CommonStopLossBudgetControl(GenericBot):
             new_stop_loss = 0.0
             stop_price = 0.0
 
-        if stop_price > estimated_close_price:
+        if stop_price >= estimated_close_price:
             self._logger.warning(f"new_stop_loss ({stop_price}) should be never higher than last_close({estimated_close_price})")
             new_stop_loss = 0.0
             stop_price = 0.0
