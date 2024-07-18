@@ -1,3 +1,7 @@
+# 0.1.7
+- fix: [ERROR] Error creating stop loss: binance Stop price would trigger immediately. Review exit #22
+- fix: [ERROR] Error canceling order: new_grouped_order. #23
+
 # 0.1.6
 - fix: [ERROR] Error creating stop loss: binance Stop price would trigger immediately.
 

@@ -204,6 +204,13 @@ class CommonStopLossBudgetControl(GenericBot):
             else:
                 # TODO
                 self._logger.error("Can't create stop loss grouped_amount_canceled_orders_and_new_trades ")
+                # ensure trade.exit_order_id = "new_grouped_order" is overwritten when stop loss fails
+                for trade in self.status.active_trades:
+                    if trade.exit_order_id in canceled_orders:
+                        self._logger.warning(f"Setting exit_order_id to '0' on {trade.id}")
+                        trade.exit_order_id = '0'  # TODO exit_order_id
+                        trade.exit_price = 0.0
+
 
     def init(self, manager: StrategyManager, logger: Logger, metrics_manager: MetricsManager, notifications_manager: NotificationsManager, exchange_manager: ExchangeManager, bot_config: BotConfig, bot_status: BotStatus, ):  # type: ignore
         super().init(manager, logger, metrics_manager, notifications_manager, exchange_manager, bot_config, bot_status,)
