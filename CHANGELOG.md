@@ -1,3 +1,6 @@
+# 0.1.8
+- fix: Possible problem with moving stop losses coming from multiple trades. (DCA)
+
 # 0.1.7
 - fix: [ERROR] Error creating stop loss: binance Stop price would trigger immediately. Review exit #22
 - fix: [ERROR] Error canceling order: new_grouped_order. #23

@@ -115,7 +115,7 @@ class CommonStopLossBudgetControl(GenericBot):
         # return the total amount of canceled orders
         total_amount_canceled_orders = 0
         canceled_orders = []
-        for order in self.status.active_orders:
+        for order in self.status.active_orders[:]:
             if new_stop_loss > order.stop_price:
                 cancelled_order = self.cancel_order(order.id)
                 if cancelled_order:
@@ -157,7 +157,7 @@ class CommonStopLossBudgetControl(GenericBot):
         new_trades_on_limit_amount = 0
 
         # find trades that get the limit to start trailing stops
-        for trade in self.status.active_trades:
+        for trade in self.status.active_trades[:]:
             if trade.exit_order_id == '0':  # TODO exit_order_id
                 if stop_price > trade.entry_price * (1 + (minimal_benefit_to_start_trailing / 100)) and stop_price > min_price_to_start_trailing:
                     trade.exit_order_id = "new_grouped_order"
@@ -190,7 +190,7 @@ class CommonStopLossBudgetControl(GenericBot):
                 canceled_orders.append("new_grouped_order")
 
                 # update trades with the new_order_id
-                for trade in self.status.active_trades:
+                for trade in self.status.active_trades[:]:
                     if trade.exit_order_id in canceled_orders:
                         trade.exit_order_id = new_order.id
                         trade.exit_price = new_stop_loss  # not real until the stop loss really executes.
