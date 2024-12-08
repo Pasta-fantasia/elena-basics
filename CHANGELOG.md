@@ -1,3 +1,6 @@
+# 0.1.9
+- fix: [ERROR] Error creating stop loss: binance Stop price would trigger immediately
+
 # 0.1.8
 - fix: Possible problem with moving stop losses coming from multiple trades. (DCA)
 
