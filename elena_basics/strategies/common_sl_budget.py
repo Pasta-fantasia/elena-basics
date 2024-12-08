@@ -149,12 +149,23 @@ class CommonStopLossBudgetControl(GenericBot):
             stop_price = 0.0
 
         if stop_price >= estimated_close_price:
-            self._logger.warning(f"new_stop_loss ({stop_price}) should be never higher than last_close({estimated_close_price})")
+            self._logger.warning(f"stop_price ({stop_price}) should be never higher than last_close({estimated_close_price})")
+            new_stop_loss = 0.0
+            stop_price = 0.0
+
+        if new_stop_loss >= estimated_close_price:
+            self._logger.warning(f"new_stop_loss ({new_stop_loss}) should be never higher than last_close({estimated_close_price})")
             new_stop_loss = 0.0
             stop_price = 0.0
 
         total_amount_canceled_orders, canceled_orders = self._cancel_active_orders_with_lower_stop_loss(new_stop_loss)
         new_trades_on_limit_amount = 0
+
+        # find trades with errors
+        for trade in self.status.active_trades[:]:
+            if trade.exit_order_id == "new_grouped_order":  # TODO: check if it happens again.
+                trade.exit_order_id = '0'
+                self._logger.warning(f"trade ({trade.id}) had new_grouped_order as exit_order_id setting to 0")
 
         # find trades that get the limit to start trailing stops
         for trade in self.status.active_trades[:]:
@@ -184,7 +195,7 @@ class CommonStopLossBudgetControl(GenericBot):
             else:
                 sale_diff = 0.0
 
-            new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades, stop_price=new_stop_loss,price=stop_price)
+            new_order = self.stop_loss(amount=grouped_amount_canceled_orders_and_new_trades, stop_price=new_stop_loss, price=stop_price)
 
             if new_order:
                 canceled_orders.append("new_grouped_order")
