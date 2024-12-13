@@ -179,8 +179,6 @@ class CommonStopLossBudgetControl(GenericBot):
 
         if grouped_amount_canceled_orders_and_new_trades >= self.limit_min_amount():
             # verify balance, it needs to be checked after any cancellation
-            base_free = 0
-
             balance = self.get_balance()
             if not balance:
                 self._logger.error("Cannot get balance")
