@@ -1,3 +1,6 @@
+# 0.1.10
+- fix: [ERROR] Stop loss amount is higher than balance. Balance...
+
 # 0.1.9
 - fix: [ERROR] Error creating stop loss: binance Stop price would trigger immediately
 

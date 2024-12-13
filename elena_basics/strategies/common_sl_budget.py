@@ -187,6 +187,26 @@ class CommonStopLossBudgetControl(GenericBot):
             base_symbol = self.pair.base
             base_free = balance.currencies[base_symbol].free
 
+            # in some cases balance is not available after some time
+            retry = 0
+            retry_limit = 5
+
+            while total_amount_canceled_orders > base_free and retry < retry_limit:
+                self._logger.warning(f"Orders for {total_amount_canceled_orders} were cancelled but balance is {base_free}. Retrying...")
+                time.sleep(5)
+                balance = self.get_balance()
+                if not balance:
+                    self._logger.error("Cannot get balance")
+                    return
+
+                base_symbol = self.pair.base
+                base_free = balance.currencies[base_symbol].free
+                retry = retry + 1
+
+            if retry >= retry_limit:
+                self._logger.error(f"Orders for {total_amount_canceled_orders} were cancelled but balance is {base_free}, after retrying {retry_limit} times.")
+                return  # this return will cause to reprocess the bot in the next cycle but leaves any amount without stop loss
+
             max_sell = min(grouped_amount_canceled_orders_and_new_trades, base_free)
             if max_sell < grouped_amount_canceled_orders_and_new_trades:
                 sale_diff = grouped_amount_canceled_orders_and_new_trades - max_sell
