@@ -205,7 +205,7 @@ class CommonStopLossBudgetControl(GenericBot):
 
             if retry >= retry_limit:
                 self._logger.error(f"Orders for {total_amount_canceled_orders} were cancelled but balance is {base_free}, after retrying {retry_limit} times.")
-                return
+                return  # this return will cause to reprocess the bot in the next cycle but leaves any amount without stop loss
 
             max_sell = min(grouped_amount_canceled_orders_and_new_trades, base_free)
             if max_sell < grouped_amount_canceled_orders_and_new_trades:
